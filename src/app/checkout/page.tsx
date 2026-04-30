@@ -6,6 +6,7 @@ import { Loader2, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useCart } from "@/context/cart-context";
 import { orderService } from "@/lib/order-service";
+import { paymentService, type PaymentMethod } from "@/lib/payment-service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,14 +32,20 @@ export default function CheckoutPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
 
-  const subtotal = useMemo(() => cart.summary.subtotal || 0, [cart.summary.subtotal]);
+  const subtotal = useMemo(
+    () => cart.summary.subtotal || 0,
+    [cart.summary.subtotal],
+  );
 
   if (!isAuthenticated) {
     return (
       <div className="container mx-auto max-w-3xl px-4 py-16 text-center space-y-4">
         <h1 className="text-2xl font-bold">Bạn chưa đăng nhập</h1>
-        <p className="text-muted-foreground">Vui lòng đăng nhập để thanh toán.</p>
+        <p className="text-muted-foreground">
+          Vui lòng đăng nhập để thanh toán.
+        </p>
         <Button onClick={() => router.push("/login")}>Đăng nhập</Button>
       </div>
     );
@@ -57,7 +64,9 @@ export default function CheckoutPage() {
       <div className="container mx-auto max-w-3xl px-4 py-16 text-center space-y-4">
         <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground/40" />
         <h1 className="text-2xl font-bold">Giỏ hàng trống</h1>
-        <p className="text-muted-foreground">Hãy thêm sản phẩm trước khi thanh toán.</p>
+        <p className="text-muted-foreground">
+          Hãy thêm sản phẩm trước khi thanh toán.
+        </p>
         <Button onClick={() => router.push("/products")}>Xem sản phẩm</Button>
       </div>
     );
@@ -76,6 +85,8 @@ export default function CheckoutPage() {
         note: form.note || undefined,
         paymentMethod: "cod",
       });
+
+      await paymentService.create(order.id, paymentMethod);
       router.push(`/orders/${order.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể tạo đơn hàng");
@@ -86,7 +97,10 @@ export default function CheckoutPage() {
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <form onSubmit={handleSubmit} className="lg:col-span-2 rounded-xl border p-5 space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="lg:col-span-2 rounded-xl border p-5 space-y-4"
+      >
         <h1 className="text-2xl font-bold">Thanh toán</h1>
 
         {error && (
@@ -99,7 +113,9 @@ export default function CheckoutPage() {
           <Label>Họ và tên</Label>
           <Input
             value={form.customerName}
-            onChange={(e) => setForm((f) => ({ ...f, customerName: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, customerName: e.target.value }))
+            }
             required
           />
         </div>
@@ -108,7 +124,9 @@ export default function CheckoutPage() {
           <Label>Số điện thoại</Label>
           <Input
             value={form.customerPhone}
-            onChange={(e) => setForm((f) => ({ ...f, customerPhone: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, customerPhone: e.target.value }))
+            }
             required
           />
         </div>
@@ -117,7 +135,9 @@ export default function CheckoutPage() {
           <Label>Địa chỉ nhận hàng</Label>
           <Textarea
             value={form.shippingAddress}
-            onChange={(e) => setForm((f) => ({ ...f, shippingAddress: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, shippingAddress: e.target.value }))
+            }
             rows={3}
             required
           />
@@ -132,8 +152,51 @@ export default function CheckoutPage() {
           />
         </div>
 
-        <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
-          {submitting ? "Đang tạo đơn..." : "Xác nhận đặt hàng (COD)"}
+        <div className="space-y-2">
+          <Label>Phương thức thanh toán</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => setPaymentMethod("cod")}
+              className={`rounded-md border px-3 py-2 text-sm text-left ${
+                paymentMethod === "cod"
+                  ? "border-primary bg-primary/10"
+                  : "border-border"
+              }`}
+            >
+              Thanh toán khi nhận hàng (COD)
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod("vietqr")}
+              className={`rounded-md border px-3 py-2 text-sm text-left ${
+                paymentMethod === "vietqr"
+                  ? "border-primary bg-primary/10"
+                  : "border-border"
+              }`}
+            >
+              VietQR (giả lập)
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod("momo")}
+              className={`rounded-md border px-3 py-2 text-sm text-left ${
+                paymentMethod === "momo"
+                  ? "border-primary bg-primary/10"
+                  : "border-border"
+              }`}
+            >
+              MoMo (giả lập)
+            </button>
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          disabled={submitting}
+          className="w-full sm:w-auto"
+        >
+          {submitting ? "Đang tạo đơn..." : "Xác nhận đặt hàng"}
         </Button>
       </form>
 
@@ -141,7 +204,10 @@ export default function CheckoutPage() {
         <h2 className="font-semibold">Đơn hàng của bạn</h2>
         <div className="space-y-2">
           {cart.items.map((item) => (
-            <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
+            <div
+              key={item.id}
+              className="flex items-start justify-between gap-3 text-sm"
+            >
               <div>
                 <p className="font-medium leading-snug">{item.productName}</p>
                 <p className="text-muted-foreground">SL: {item.quantity}</p>

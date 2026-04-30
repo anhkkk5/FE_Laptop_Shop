@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { orderService, type Order } from "@/lib/order-service";
+import { paymentService, type Payment } from "@/lib/payment-service";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 
@@ -22,14 +23,22 @@ const statusLabel: Record<string, string> = {
   cancelled: "Đã hủy",
 };
 
+const paymentStatusLabel: Record<string, string> = {
+  pending: "Chờ thanh toán",
+  success: "Đã thanh toán",
+  failed: "Thanh toán thất bại",
+};
+
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { isAuthenticated } = useAuth();
 
   const [order, setOrder] = useState<Order | null>(null);
+  const [payment, setPayment] = useState<Payment | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   const orderId = Number(params.id);
 
@@ -43,6 +52,13 @@ export default function OrderDetailPage() {
       try {
         const data = await orderService.getMineById(orderId);
         setOrder(data);
+
+        try {
+          const paymentData = await paymentService.getStatus(orderId);
+          setPayment(paymentData);
+        } catch {
+          setPayment(null);
+        }
       } finally {
         setLoading(false);
       }
@@ -56,7 +72,9 @@ export default function OrderDetailPage() {
   if (!isAuthenticated) {
     return (
       <div className="container mx-auto max-w-4xl px-4 py-12">
-        <p className="text-muted-foreground">Vui lòng đăng nhập để xem đơn hàng.</p>
+        <p className="text-muted-foreground">
+          Vui lòng đăng nhập để xem đơn hàng.
+        </p>
       </div>
     );
   }
@@ -89,17 +107,26 @@ export default function OrderDetailPage() {
 
       <div className="rounded-xl border p-5 space-y-2">
         <h1 className="text-2xl font-bold">Đơn hàng #{order.orderCode}</h1>
-        <p className="text-sm text-muted-foreground">Trạng thái: {statusLabel[order.status] || order.status}</p>
-        <p className="text-sm text-muted-foreground">Ngày tạo: {new Date(order.createdAt).toLocaleString("vi-VN")}</p>
+        <p className="text-sm text-muted-foreground">
+          Trạng thái: {statusLabel[order.status] || order.status}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Ngày tạo: {new Date(order.createdAt).toLocaleString("vi-VN")}
+        </p>
       </div>
 
       <div className="rounded-xl border p-5 space-y-3">
         <h2 className="font-semibold">Sản phẩm</h2>
         {order.items.map((item) => (
-          <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
+          <div
+            key={item.id}
+            className="flex items-start justify-between gap-3 text-sm"
+          >
             <div>
               <p className="font-medium">{item.productName}</p>
-              <p className="text-muted-foreground">SL: {item.quantity} × {formatPrice(Number(item.unitPrice))}</p>
+              <p className="text-muted-foreground">
+                SL: {item.quantity} × {formatPrice(Number(item.unitPrice))}
+              </p>
             </div>
             <p className="font-medium">{formatPrice(Number(item.lineTotal))}</p>
           </div>
@@ -107,8 +134,63 @@ export default function OrderDetailPage() {
         <div className="h-px bg-border" />
         <div className="flex items-center justify-between">
           <span className="font-semibold">Tổng cộng</span>
-          <span className="font-semibold">{formatPrice(Number(order.total))}</span>
+          <span className="font-semibold">
+            {formatPrice(Number(order.total))}
+          </span>
         </div>
+      </div>
+
+      <div className="rounded-xl border p-5 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold">Thanh toán</h2>
+          {payment && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={checkingPayment}
+              onClick={async () => {
+                setCheckingPayment(true);
+                try {
+                  const paymentData = await paymentService.getStatus(order.id);
+                  setPayment(paymentData);
+                } finally {
+                  setCheckingPayment(false);
+                }
+              }}
+            >
+              {checkingPayment ? "Đang kiểm tra..." : "Kiểm tra trạng thái"}
+            </Button>
+          )}
+        </div>
+
+        {payment ? (
+          <>
+            <p className="text-sm text-muted-foreground">
+              Phương thức:{" "}
+              <span className="font-medium text-foreground uppercase">
+                {payment.method}
+              </span>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Trạng thái:{" "}
+              <span className="font-medium text-foreground">
+                {paymentStatusLabel[payment.status] || payment.status}
+              </span>
+            </p>
+            {payment.transactionCode && (
+              <p className="text-sm text-muted-foreground">
+                Mã giao dịch:{" "}
+                <span className="font-medium text-foreground">
+                  {payment.transactionCode}
+                </span>
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Chưa có thông tin thanh toán.
+          </p>
+        )}
       </div>
 
       {canCancel && (
