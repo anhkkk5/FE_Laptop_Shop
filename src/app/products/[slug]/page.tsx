@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Package, Eye } from "lucide-react";
 import { productClientService, type Product } from "@/lib/product-service";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/context/cart-context";
+import { useAuth } from "@/context/auth-context";
 
 function formatPrice(price: number): string {
   return new Intl.NumberFormat("vi-VN", {
@@ -17,12 +19,17 @@ function formatPrice(price: number): string {
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
+  const router = useRouter();
   const slug = params.slug;
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [adding, setAdding] = useState(false);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -64,14 +71,19 @@ export default function ProductDetailPage() {
   if (!product || error) {
     return (
       <div className="container mx-auto max-w-7xl px-4 py-16">
-        <Link href="/products" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6">
+        <Link
+          href="/products"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
+        >
           <ArrowLeft className="h-4 w-4" />
           Quay lại danh sách sản phẩm
         </Link>
         <div className="rounded-xl border bg-muted/20 p-12 text-center">
           <Package className="mx-auto h-14 w-14 text-muted-foreground/40 mb-3" />
           <p className="text-lg font-semibold">Không tìm thấy sản phẩm</p>
-          <p className="text-sm text-muted-foreground mt-1">Vui lòng thử lại với sản phẩm khác.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Vui lòng thử lại với sản phẩm khác.
+          </p>
         </div>
       </div>
     );
@@ -79,9 +91,33 @@ export default function ProductDetailPage() {
 
   const currentImage = images[selectedImage]?.url;
 
+  async function handleAddToCart() {
+    if (!product) return;
+
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    setAdding(true);
+    setActionMessage(null);
+
+    try {
+      await addToCart(product.id, 1);
+      setActionMessage("Đã thêm sản phẩm vào giỏ hàng.");
+    } catch {
+      setActionMessage("Không thể thêm vào giỏ hàng. Vui lòng thử lại.");
+    } finally {
+      setAdding(false);
+    }
+  }
+
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 space-y-6">
-      <Link href="/products" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        href="/products"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-4 w-4" />
         Quay lại danh sách sản phẩm
       </Link>
@@ -90,7 +126,11 @@ export default function ProductDetailPage() {
         <div className="space-y-3">
           <div className="aspect-[4/3] rounded-xl border bg-muted flex items-center justify-center overflow-hidden">
             {currentImage ? (
-              <img src={currentImage} alt={product.name} className="h-full w-full object-cover" />
+              <img
+                src={currentImage}
+                alt={product.name}
+                className="h-full w-full object-cover"
+              />
             ) : (
               <Package className="h-16 w-16 text-muted-foreground/30" />
             )}
@@ -105,7 +145,11 @@ export default function ProductDetailPage() {
                   className={`aspect-square overflow-hidden rounded-md border ${idx === selectedImage ? "border-primary ring-1 ring-primary" : "border-border"}`}
                   onClick={() => setSelectedImage(idx)}
                 >
-                  <img src={img.url} alt={img.alt || product.name} className="h-full w-full object-cover" />
+                  <img
+                    src={img.url}
+                    alt={img.alt || product.name}
+                    className="h-full w-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -115,21 +159,33 @@ export default function ProductDetailPage() {
         <div className="space-y-4">
           <div className="space-y-2">
             <div className="flex flex-wrap gap-2">
-              {product.brand && <Badge variant="secondary">{product.brand.name}</Badge>}
-              {product.category && <Badge variant="outline">{product.category.name}</Badge>}
+              {product.brand && (
+                <Badge variant="secondary">{product.brand.name}</Badge>
+              )}
+              {product.category && (
+                <Badge variant="outline">{product.category.name}</Badge>
+              )}
               {product.isFeatured && <Badge>Nổi bật</Badge>}
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {product.name}
+            </h1>
             {product.shortDescription && (
-              <p className="text-muted-foreground">{product.shortDescription}</p>
+              <p className="text-muted-foreground">
+                {product.shortDescription}
+              </p>
             )}
           </div>
 
           <div className="rounded-xl border p-4 bg-muted/20">
             {product.salePrice ? (
               <div className="space-y-1">
-                <p className="text-3xl font-bold text-destructive">{formatPrice(product.salePrice)}</p>
-                <p className="text-sm text-muted-foreground line-through">{formatPrice(product.price)}</p>
+                <p className="text-3xl font-bold text-destructive">
+                  {formatPrice(product.salePrice)}
+                </p>
+                <p className="text-sm text-muted-foreground line-through">
+                  {formatPrice(product.price)}
+                </p>
               </div>
             ) : (
               <p className="text-3xl font-bold">{formatPrice(product.price)}</p>
@@ -150,14 +206,28 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          <Button className="w-full" size="lg">Liên hệ mua hàng</Button>
+          <div className="space-y-2">
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={handleAddToCart}
+              disabled={adding}
+            >
+              {adding ? "Đang thêm..." : "Thêm vào giỏ hàng"}
+            </Button>
+            {actionMessage && (
+              <p className="text-xs text-muted-foreground">{actionMessage}</p>
+            )}
+          </div>
         </div>
       </div>
 
       {product.description && (
         <section className="rounded-xl border p-5 space-y-2">
           <h2 className="text-lg font-semibold">Mô tả sản phẩm</h2>
-          <p className="text-sm text-muted-foreground whitespace-pre-line">{product.description}</p>
+          <p className="text-sm text-muted-foreground whitespace-pre-line">
+            {product.description}
+          </p>
         </section>
       )}
 
@@ -166,7 +236,10 @@ export default function ProductDetailPage() {
           <h2 className="text-lg font-semibold">Thông số kỹ thuật</h2>
           <div className="divide-y rounded-md border">
             {Object.entries(product.specs).map(([key, value]) => (
-              <div key={key} className="grid grid-cols-3 gap-3 px-4 py-3 text-sm">
+              <div
+                key={key}
+                className="grid grid-cols-3 gap-3 px-4 py-3 text-sm"
+              >
                 <span className="text-muted-foreground col-span-1">{key}</span>
                 <span className="col-span-2 font-medium">{value}</span>
               </div>
