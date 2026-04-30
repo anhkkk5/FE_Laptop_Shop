@@ -32,6 +32,8 @@ function formatPrice(price: number): string {
   }).format(price);
 }
 
+const LOW_STOCK_THRESHOLD = 5;
+
 function ProductsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -43,7 +45,9 @@ function ProductsContent() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") || "",
+  );
   const [showFilters, setShowFilters] = useState(false);
 
   const currentPage = Number(searchParams.get("page") || "1");
@@ -55,7 +59,10 @@ function ProductsContent() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const params: Record<string, string | number> = { page: currentPage, limit: 12 };
+      const params: Record<string, string | number> = {
+        page: currentPage,
+        limit: 12,
+      };
       if (currentSearch) params.search = currentSearch;
       if (currentCategory) params.categoryId = Number(currentCategory);
       if (currentBrand) params.brandId = Number(currentBrand);
@@ -151,7 +158,9 @@ function ProductsContent() {
           >
             <option value="">Tất cả danh mục</option>
             {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
           <select
@@ -161,7 +170,9 @@ function ProductsContent() {
           >
             <option value="">Tất cả thương hiệu</option>
             {brands.map((b) => (
-              <option key={b.id} value={b.id}>{b.name}</option>
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
             ))}
           </select>
           <select
@@ -183,19 +194,34 @@ function ProductsContent() {
           {currentSearch && (
             <Badge variant="secondary" className="gap-1">
               Tìm: &quot;{currentSearch}&quot;
-              <button onClick={() => updateParams({ search: "" })} className="ml-1">✕</button>
+              <button
+                onClick={() => updateParams({ search: "" })}
+                className="ml-1"
+              >
+                ✕
+              </button>
             </Badge>
           )}
           {currentCategory && (
             <Badge variant="secondary" className="gap-1">
               {categories.find((c) => String(c.id) === currentCategory)?.name}
-              <button onClick={() => updateParams({ categoryId: "" })} className="ml-1">✕</button>
+              <button
+                onClick={() => updateParams({ categoryId: "" })}
+                className="ml-1"
+              >
+                ✕
+              </button>
             </Badge>
           )}
           {currentBrand && (
             <Badge variant="secondary" className="gap-1">
               {brands.find((b) => String(b.id) === currentBrand)?.name}
-              <button onClick={() => updateParams({ brandId: "" })} className="ml-1">✕</button>
+              <button
+                onClick={() => updateParams({ brandId: "" })}
+                className="ml-1"
+              >
+                ✕
+              </button>
             </Badge>
           )}
           <button
@@ -226,7 +252,10 @@ function ProductsContent() {
                 <div className="aspect-[4/3] bg-muted flex items-center justify-center relative">
                   {product.images?.length > 0 ? (
                     <img
-                      src={product.images.find((i) => i.isPrimary)?.url || product.images[0].url}
+                      src={
+                        product.images.find((i) => i.isPrimary)?.url ||
+                        product.images[0].url
+                      }
                       alt={product.name}
                       className="object-cover w-full h-full group-hover:scale-105 transition-transform"
                     />
@@ -235,14 +264,33 @@ function ProductsContent() {
                   )}
                   {product.salePrice && (
                     <Badge className="absolute top-2 right-2 bg-destructive">
-                      -{Math.round((1 - product.salePrice / product.price) * 100)}%
+                      -
+                      {Math.round(
+                        (1 - product.salePrice / product.price) * 100,
+                      )}
+                      %
                     </Badge>
                   )}
                   {product.isFeatured && (
-                    <Badge className="absolute top-2 left-2" variant="secondary">
+                    <Badge
+                      className="absolute top-2 left-2"
+                      variant="secondary"
+                    >
                       Nổi bật
                     </Badge>
                   )}
+                  {product.stockQuantity <= 0 ? (
+                    <Badge
+                      className="absolute bottom-2 left-2"
+                      variant="destructive"
+                    >
+                      Hết hàng
+                    </Badge>
+                  ) : product.stockQuantity <= LOW_STOCK_THRESHOLD ? (
+                    <Badge className="absolute bottom-2 left-2 border-amber-500/50 bg-amber-500/10 text-amber-700">
+                      Sắp hết hàng
+                    </Badge>
+                  ) : null}
                 </div>
                 <CardContent className="p-4 space-y-2">
                   {product.brand && (
@@ -269,9 +317,24 @@ function ProductsContent() {
                         </span>
                       </div>
                     ) : (
-                      <span className="text-lg font-bold">{formatPrice(product.price)}</span>
+                      <span className="text-lg font-bold">
+                        {formatPrice(product.price)}
+                      </span>
                     )}
                   </div>
+                  <p
+                    className={`text-xs ${
+                      product.stockQuantity <= 0
+                        ? "text-destructive"
+                        : product.stockQuantity <= LOW_STOCK_THRESHOLD
+                          ? "text-amber-700"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {product.stockQuantity <= 0
+                      ? "Tạm hết hàng"
+                      : `Còn ${product.stockQuantity} sản phẩm`}
+                  </p>
                 </CardContent>
               </Card>
             </Link>

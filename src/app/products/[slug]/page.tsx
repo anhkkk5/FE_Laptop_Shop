@@ -17,6 +17,8 @@ function formatPrice(price: number): string {
   }).format(price);
 }
 
+const LOW_STOCK_THRESHOLD = 5;
+
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
@@ -90,6 +92,7 @@ export default function ProductDetailPage() {
   }
 
   const currentImage = images[selectedImage]?.url;
+  const isOutOfStock = product.stockQuantity <= 0;
 
   async function handleAddToCart() {
     if (!product) return;
@@ -105,8 +108,12 @@ export default function ProductDetailPage() {
     try {
       await addToCart(product.id, 1);
       setActionMessage("Đã thêm sản phẩm vào giỏ hàng.");
-    } catch {
-      setActionMessage("Không thể thêm vào giỏ hàng. Vui lòng thử lại.");
+    } catch (err) {
+      setActionMessage(
+        err instanceof Error
+          ? err.message
+          : "Không thể thêm vào giỏ hàng. Vui lòng thử lại.",
+      );
     } finally {
       setAdding(false);
     }
@@ -196,6 +203,15 @@ export default function ProductDetailPage() {
             <div className="rounded-lg border p-3">
               <p className="text-muted-foreground">Tồn kho</p>
               <p className="font-semibold">{product.stockQuantity}</p>
+              {isOutOfStock ? (
+                <p className="mt-1 text-xs font-medium text-destructive">
+                  Sản phẩm hiện đã hết hàng
+                </p>
+              ) : product.stockQuantity <= LOW_STOCK_THRESHOLD ? (
+                <p className="mt-1 text-xs font-medium text-amber-700">
+                  Sắp hết hàng, hãy đặt sớm
+                </p>
+              ) : null}
             </div>
             <div className="rounded-lg border p-3">
               <p className="text-muted-foreground flex items-center gap-1">
@@ -211,9 +227,13 @@ export default function ProductDetailPage() {
               className="w-full"
               size="lg"
               onClick={handleAddToCart}
-              disabled={adding}
+              disabled={adding || isOutOfStock}
             >
-              {adding ? "Đang thêm..." : "Thêm vào giỏ hàng"}
+              {isOutOfStock
+                ? "Tạm hết hàng"
+                : adding
+                  ? "Đang thêm..."
+                  : "Thêm vào giỏ hàng"}
             </Button>
             {actionMessage && (
               <p className="text-xs text-muted-foreground">{actionMessage}</p>
