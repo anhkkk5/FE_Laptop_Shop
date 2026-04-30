@@ -22,7 +22,7 @@ function formatPrice(price: number): string {
 export default function CheckoutPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
-  const { cart, isLoading: cartLoading } = useCart();
+  const { cart, isLoading: cartLoading, refreshCart } = useCart();
 
   const [form, setForm] = useState({
     customerName: user?.fullName || "",
@@ -33,6 +33,7 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
+  const [stockChanged, setStockChanged] = useState(false);
 
   const subtotal = useMemo(
     () => cart.summary.subtotal || 0,
@@ -76,6 +77,7 @@ export default function CheckoutPage() {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+    setStockChanged(false);
 
     try {
       const order = await orderService.create({
@@ -89,7 +91,19 @@ export default function CheckoutPage() {
       await paymentService.create(order.id, paymentMethod);
       router.push(`/orders/${order.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tạo đơn hàng");
+      const message =
+        err instanceof Error ? err.message : "Không thể tạo đơn hàng";
+      const isStockError = /stock|tồn kho|het hang|hết hàng/i.test(message);
+
+      if (isStockError) {
+        setStockChanged(true);
+        setError(
+          "Một số sản phẩm đã vượt tồn kho hiện tại. Vui lòng kiểm tra lại giỏ hàng.",
+        );
+        await refreshCart();
+      } else {
+        setError(message);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -106,6 +120,13 @@ export default function CheckoutPage() {
         {error && (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {error}
+          </div>
+        )}
+
+        {stockChanged && (
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
+            Số lượng sản phẩm trong giỏ đã được làm mới theo tồn kho mới nhất.
+            Bạn có thể quay lại giỏ hàng để điều chỉnh trước khi đặt đơn.
           </div>
         )}
 
@@ -198,6 +219,15 @@ export default function CheckoutPage() {
         >
           {submitting ? "Đang tạo đơn..." : "Xác nhận đặt hàng"}
         </Button>
+        {stockChanged && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push("/cart")}
+          >
+            Quay lại giỏ hàng
+          </Button>
+        )}
       </form>
 
       <aside className="rounded-xl border p-5 h-fit space-y-3">
