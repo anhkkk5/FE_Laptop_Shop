@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Bell, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import { API_URL } from "@/lib/api";
 import {
   notificationService,
   type NotificationItem,
@@ -13,6 +14,63 @@ import { Badge } from "@/components/ui/badge";
 
 const POLL_INTERVAL_MS = 15000;
 
+type UnknownRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === "object" && value !== null;
+}
+
+function toNotificationItem(value: unknown): NotificationItem | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const id = Number(value.id);
+  const userId = Number(value.userId);
+  const title = typeof value.title === "string" ? value.title : "";
+  const content = typeof value.content === "string" ? value.content : "";
+  const createdAt = typeof value.createdAt === "string" ? value.createdAt : "";
+
+  if (!id || !userId || !title || !content || !createdAt) {
+    return null;
+  }
+
+  return {
+    id,
+    userId,
+    type: (value.type as NotificationItem["type"]) ?? "system",
+    title,
+    content,
+    data: isRecord(value.data) ? value.data : null,
+    isRead: Boolean(value.isRead),
+    createdAt,
+  };
+}
+
+function extractIncomingNotification(
+  payload: unknown,
+): NotificationItem | null {
+  const direct = toNotificationItem(payload);
+  if (direct) {
+    return direct;
+  }
+
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  const firstLevel = toNotificationItem(payload.data);
+  if (firstLevel) {
+    return firstLevel;
+  }
+
+  if (isRecord(payload.data)) {
+    return toNotificationItem(payload.data.data);
+  }
+
+  return null;
+}
+
 export default function NotificationsPage() {
   const { isAuthenticated } = useAuth();
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -20,6 +78,7 @@ export default function NotificationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<number | "all" | null>(null);
   const [unread, setUnread] = useState(0);
+  const [liveConnected, setLiveConnected] = useState(false);
 
   const loadNotifications = useCallback(async () => {
     if (!isAuthenticated) {
@@ -56,6 +115,59 @@ export default function NotificationsPage() {
     return () => clearInterval(id);
   }, [isAuthenticated, loadNotifications]);
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLiveConnected(false);
+      return;
+    }
+
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      setLiveConnected(false);
+      return;
+    }
+
+    const streamUrl = `${API_URL}/notifications/stream?token=${encodeURIComponent(accessToken)}`;
+    const stream = new EventSource(streamUrl);
+
+    stream.onopen = () => {
+      setLiveConnected(true);
+    };
+
+    stream.onmessage = (event) => {
+      try {
+        const parsed = JSON.parse(event.data) as unknown;
+        const incoming = extractIncomingNotification(parsed);
+
+        if (!incoming) {
+          return;
+        }
+
+        setItems((prev) => {
+          if (prev.some((item) => item.id === incoming.id)) {
+            return prev;
+          }
+          return [incoming, ...prev];
+        });
+
+        if (!incoming.isRead) {
+          setUnread((prev) => prev + 1);
+        }
+      } catch {
+        // ignore invalid SSE payload
+      }
+    };
+
+    stream.onerror = () => {
+      setLiveConnected(false);
+    };
+
+    return () => {
+      stream.close();
+      setLiveConnected(false);
+    };
+  }, [isAuthenticated]);
+
   async function handleMarkAsRead(notificationId: number) {
     setUpdating(notificationId);
     try {
@@ -84,7 +196,9 @@ export default function NotificationsPage() {
     return (
       <div className="container mx-auto max-w-4xl px-4 py-12 space-y-3">
         <h1 className="text-2xl font-bold">Thông báo</h1>
-        <p className="text-muted-foreground">Vui lòng đăng nhập để xem thông báo.</p>
+        <p className="text-muted-foreground">
+          Vui lòng đăng nhập để xem thông báo.
+        </p>
         <Link
           href="/login"
           className="inline-flex h-9 items-center justify-center rounded-md border px-4 text-sm font-medium hover:bg-muted"
@@ -101,7 +215,9 @@ export default function NotificationsPage() {
         <div className="space-y-1">
           <h1 className="text-2xl font-bold">Thông báo của tôi</h1>
           <p className="text-sm text-muted-foreground">
-            Đồng bộ tự động mỗi {Math.floor(POLL_INTERVAL_MS / 1000)} giây.
+            {liveConnected
+              ? "Đang nhận thông báo realtime"
+              : `Đồng bộ mỗi ${Math.floor(POLL_INTERVAL_MS / 1000)} giây.`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -113,7 +229,9 @@ export default function NotificationsPage() {
             disabled={updating === "all" || unread === 0}
             onClick={handleMarkAllAsRead}
           >
-            {updating === "all" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {updating === "all" && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
             Đánh dấu tất cả đã đọc
           </Button>
         </div>
@@ -146,7 +264,9 @@ export default function NotificationsPage() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1">
                   <p className="font-medium">{item.title}</p>
-                  <p className="text-sm text-muted-foreground">{item.content}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {item.content}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(item.createdAt).toLocaleString("vi-VN")}
                   </p>
