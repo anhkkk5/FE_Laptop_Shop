@@ -29,6 +29,12 @@ export default function Home() {
             PC Builder
           </Link>
           <Link
+            href="/warranty"
+            className="inline-flex h-11 items-center justify-center rounded-md border px-6 text-sm font-medium hover:bg-muted"
+          >
+            Bảo hành
+          </Link>
+          <Link
             href="/login"
             className="inline-flex h-11 items-center justify-center rounded-md border px-6 text-sm font-medium hover:bg-muted"
           >
