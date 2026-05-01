@@ -35,6 +35,12 @@ export default function Home() {
             Bảo hành
           </Link>
           <Link
+            href="/notifications"
+            className="inline-flex h-11 items-center justify-center rounded-md border px-6 text-sm font-medium hover:bg-muted"
+          >
+            Thông báo
+          </Link>
+          <Link
             href="/login"
             className="inline-flex h-11 items-center justify-center rounded-md border px-6 text-sm font-medium hover:bg-muted"
           >
