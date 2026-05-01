@@ -23,6 +23,12 @@ export default function Home() {
             Xem sản phẩm
           </Link>
           <Link
+            href="/pc-build"
+            className="inline-flex h-11 items-center justify-center rounded-md border px-6 text-sm font-medium hover:bg-muted"
+          >
+            PC Builder
+          </Link>
+          <Link
             href="/login"
             className="inline-flex h-11 items-center justify-center rounded-md border px-6 text-sm font-medium hover:bg-muted"
           >
