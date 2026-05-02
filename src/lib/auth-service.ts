@@ -1,12 +1,6 @@
 import api from "./api";
 import { AxiosError } from "axios";
 
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: string;
-}
-
 export interface User {
   id: number;
   email: string;
@@ -43,31 +37,25 @@ export const authService = {
     email: string;
     password: string;
     fullName: string;
-  }): Promise<AuthTokens> {
+  }): Promise<User> {
     try {
-      const res = await api.post<ApiResponse<AuthTokens>>(
+      const res = await api.post<ApiResponse<{ user: User }>>(
         "/auth/register",
         data,
       );
-      const tokens = res.data.data;
-      localStorage.setItem("accessToken", tokens.accessToken);
-      localStorage.setItem("refreshToken", tokens.refreshToken);
-      return tokens;
+      return res.data.data.user;
     } catch (error) {
       throw new Error(getErrorMessage(error));
     }
   },
 
-  async login(email: string, password: string): Promise<AuthTokens> {
+  async login(email: string, password: string): Promise<User> {
     try {
-      const res = await api.post<ApiResponse<AuthTokens>>("/auth/login", {
+      const res = await api.post<ApiResponse<{ user: User }>>("/auth/login", {
         email,
         password,
       });
-      const tokens = res.data.data;
-      localStorage.setItem("accessToken", tokens.accessToken);
-      localStorage.setItem("refreshToken", tokens.refreshToken);
-      return tokens;
+      return res.data.data.user;
     } catch (error) {
       throw new Error(getErrorMessage(error));
     }
@@ -75,13 +63,10 @@ export const authService = {
 
   async logout(): Promise<void> {
     try {
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (refreshToken) {
-        await api.post("/auth/logout", { refreshToken });
-      }
-    } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      await api.post("/auth/logout");
+    } catch (error) {
+      // Ignore errors during logout
+      console.error("Logout error:", error);
     }
   },
 
@@ -140,12 +125,16 @@ export const authService = {
 
   getGoogleLoginUrl(): string {
     const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3100/api/v1";
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
     return `${apiUrl}/auth/google`;
   },
 
-  isAuthenticated(): boolean {
-    if (typeof window === "undefined") return false;
-    return !!localStorage.getItem("accessToken");
+  async checkAuth(): Promise<boolean> {
+    try {
+      await this.getMe();
+      return true;
+    } catch {
+      return false;
+    }
   },
 };

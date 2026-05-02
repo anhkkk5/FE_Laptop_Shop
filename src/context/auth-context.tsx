@@ -34,16 +34,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      if (!authService.isAuthenticated()) {
-        setUser(null);
-        return;
-      }
       const userData = await authService.getMe();
       setUser(userData);
     } catch {
       setUser(null);
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
     }
   }, []);
 
