@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/context/auth-context";
 import { CartProvider } from "@/context/cart-context";
+import Header from "@/components/header";
 import "./globals.css";
 
 const inter = Inter({
@@ -34,7 +35,10 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthProvider>
-          <CartProvider>{children}</CartProvider>
+          <CartProvider>
+            <Header />
+            {children}
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>
