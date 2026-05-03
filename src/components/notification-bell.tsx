@@ -38,10 +38,26 @@ export default function NotificationBell() {
 
   useEffect(() => {
     void fetchUnread();
-    const interval = window.setInterval(() => {
-      void fetchUnread();
-    }, 30000);
-    return () => window.clearInterval(interval);
+
+    // SSE for real-time notifications
+    const API_URL =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+    const es = new EventSource(`${API_URL}/notifications/stream`, {
+      withCredentials: true,
+    });
+
+    es.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        const notification: NotificationItem = payload.data ?? payload;
+        setUnread((prev) => prev + 1);
+        setItems((prev) => [notification, ...prev].slice(0, 50));
+      } catch {
+        /* ignore parse errors */
+      }
+    };
+
+    return () => es.close();
   }, [fetchUnread]);
 
   useEffect(() => {
