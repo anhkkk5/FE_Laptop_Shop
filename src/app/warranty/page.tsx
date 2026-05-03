@@ -112,7 +112,9 @@ export default function WarrantyPage() {
     return (
       <div className="container mx-auto max-w-5xl px-4 py-12 space-y-3">
         <h1 className="text-2xl font-bold">Bảo hành</h1>
-        <p className="text-muted-foreground">Vui lòng đăng nhập để gửi yêu cầu bảo hành.</p>
+        <p className="text-muted-foreground">
+          Vui lòng đăng nhập để gửi yêu cầu bảo hành.
+        </p>
         <Link
           href="/login"
           className="inline-flex h-9 items-center justify-center rounded-md border px-4 text-sm font-medium hover:bg-muted"
@@ -154,7 +156,9 @@ export default function WarrantyPage() {
 
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1">
-                <label className="text-sm text-muted-foreground">Đơn hàng</label>
+                <label className="text-sm text-muted-foreground">
+                  Đơn hàng
+                </label>
                 <select
                   className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={selectedOrderId}
@@ -167,14 +171,17 @@ export default function WarrantyPage() {
                   <option value={0}>-- Chọn đơn hàng --</option>
                   {orders.map((order) => (
                     <option key={order.id} value={order.id}>
-                      #{order.orderCode} - {new Date(order.createdAt).toLocaleDateString("vi-VN")}
+                      #{order.orderCode} -{" "}
+                      {new Date(order.createdAt).toLocaleDateString("vi-VN")}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm text-muted-foreground">Sản phẩm</label>
+                <label className="text-sm text-muted-foreground">
+                  Sản phẩm
+                </label>
                 <select
                   className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={selectedOrderItemId}
@@ -194,11 +201,15 @@ export default function WarrantyPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm text-muted-foreground">Mức độ ưu tiên</label>
+              <label className="text-sm text-muted-foreground">
+                Mức độ ưu tiên
+              </label>
               <select
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm md:w-64"
                 value={priority}
-                onChange={(event) => setPriority(event.target.value as WarrantyPriority)}
+                onChange={(event) =>
+                  setPriority(event.target.value as WarrantyPriority)
+                }
               >
                 <option value="low">Thấp</option>
                 <option value="medium">Trung bình</option>
@@ -225,11 +236,17 @@ export default function WarrantyPage() {
           <section className="rounded-xl border p-4 space-y-3">
             <h2 className="font-semibold">Ticket của tôi</h2>
             {tickets.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Bạn chưa có ticket bảo hành nào.</p>
+              <p className="text-sm text-muted-foreground">
+                Bạn chưa có ticket bảo hành nào.
+              </p>
             ) : (
               <div className="space-y-2">
                 {tickets.map((ticket) => (
-                  <div key={ticket.id} className="rounded-lg border p-3 space-y-1">
+                  <Link
+                    key={ticket.id}
+                    href={`/warranty/${ticket.id}`}
+                    className="block rounded-lg border p-3 space-y-1 hover:bg-muted/30 transition-colors"
+                  >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-medium">{ticket.ticketCode}</p>
                       <span className="text-sm text-muted-foreground">
@@ -241,7 +258,7 @@ export default function WarrantyPage() {
                       Ưu tiên: {priorityLabel[ticket.priority]} • Tạo lúc:{" "}
                       {new Date(ticket.createdAt).toLocaleString("vi-VN")}
                     </p>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

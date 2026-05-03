@@ -463,9 +463,14 @@ export default function ProductDetailPage() {
         ) : (
           <div className="space-y-3">
             {reviews.map((review) => (
-              <div key={review.id} className="rounded-lg border p-3 space-y-1">
+              <div key={review.id} className="rounded-lg border p-3 space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-medium">{review.rating} / 5 sao</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium">
+                      {review.rating} / 5 sao
+                    </p>
+                    <span className="text-xs text-muted-foreground">★</span>
+                  </div>
                   {review.isVerified && (
                     <Badge variant="outline">Đã mua hàng</Badge>
                   )}
@@ -474,6 +479,18 @@ export default function ProductDetailPage() {
                   <p className="text-sm text-muted-foreground">
                     {review.comment}
                   </p>
+                )}
+                {review.images && review.images.length > 0 && (
+                  <div className="flex gap-2 flex-wrap">
+                    {review.images.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img}
+                        alt={`Review image ${idx + 1}`}
+                        className="h-20 w-20 rounded-md border object-cover"
+                      />
+                    ))}
+                  </div>
                 )}
                 <p className="text-xs text-muted-foreground">
                   {new Date(review.createdAt).toLocaleString("vi-VN")}

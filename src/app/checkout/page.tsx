@@ -85,11 +85,25 @@ export default function CheckoutPage() {
         customerPhone: form.customerPhone,
         shippingAddress: form.shippingAddress,
         note: form.note || undefined,
-        paymentMethod: "cod",
+        paymentMethod,
       });
 
       await paymentService.create(order.id, paymentMethod);
-      router.push(`/orders/${order.id}`);
+
+      if (paymentMethod === "cod") {
+        router.push(`/payment/success?orderId=${order.id}`);
+      } else if (paymentMethod === "vietqr") {
+        router.push(`/payment/vietqr/${order.id}`);
+      } else if (paymentMethod === "momo") {
+        const momo = await paymentService.createMomo(order.id);
+        if (momo.payUrl) {
+          window.location.href = momo.payUrl;
+        } else {
+          router.push(`/payment/failed?orderId=${order.id}`);
+        }
+      } else {
+        router.push(`/orders/${order.id}`);
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Không thể tạo đơn hàng";

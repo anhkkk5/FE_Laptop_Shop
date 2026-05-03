@@ -23,6 +23,24 @@ interface ApiResponse<T> {
   data: T;
 }
 
+export interface VietQrResponse {
+  qrUrl: string;
+  bankId: string;
+  accountNo: string;
+  amount: number;
+  description: string;
+}
+
+export interface MomoResponse {
+  payUrl?: string;
+  qrCodeUrl?: string;
+  deeplink?: string;
+  orderId: string;
+  requestId: string;
+  resultCode: number;
+  message: string;
+}
+
 export const paymentService = {
   async create(orderId: number, method: PaymentMethod): Promise<Payment> {
     const res = await api.post<ApiResponse<Payment>>("/payments/create", {
@@ -33,7 +51,23 @@ export const paymentService = {
   },
 
   async getStatus(orderId: number): Promise<Payment> {
-    const res = await api.get<ApiResponse<Payment>>(`/payments/${orderId}/status`);
+    const res = await api.get<ApiResponse<Payment>>(
+      `/payments/${orderId}/status`,
+    );
+    return res.data.data;
+  },
+
+  async getVietQr(orderId: number): Promise<VietQrResponse> {
+    const res = await api.get<ApiResponse<VietQrResponse>>(
+      `/payments/${orderId}/vietqr`,
+    );
+    return res.data.data;
+  },
+
+  async createMomo(orderId: number): Promise<MomoResponse> {
+    const res = await api.post<ApiResponse<MomoResponse>>(
+      `/payments/${orderId}/momo`,
+    );
     return res.data.data;
   },
 };

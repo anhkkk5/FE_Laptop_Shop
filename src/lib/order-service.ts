@@ -51,12 +51,14 @@ interface ApiResponse<T> {
   data: T;
 }
 
+export type OrderPaymentMethod = "cod" | "vietqr" | "momo";
+
 export interface CreateOrderPayload {
   customerName: string;
   customerPhone: string;
   shippingAddress: string;
   note?: string;
-  paymentMethod?: "cod";
+  paymentMethod?: OrderPaymentMethod;
 }
 
 export const orderService = {
@@ -65,7 +67,10 @@ export const orderService = {
     return res.data.data;
   },
 
-  async getMine(page: number = 1, limit: number = 10): Promise<PaginatedResult<Order>> {
+  async getMine(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<PaginatedResult<Order>> {
     const res = await api.get<ApiResponse<PaginatedResult<Order>>>("/orders", {
       params: { page, limit },
     });

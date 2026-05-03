@@ -9,7 +9,17 @@ const api = axios.create({
   withCredentials: true, // Enable sending cookies with requests
 });
 
-// No need for request interceptor - cookies are sent automatically
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+function subscribeTokenRefresh(cb: (token: string) => void) {
+  refreshSubscribers.push(cb);
+}
+
+function onTokenRefreshed(token: string) {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+}
 
 api.interceptors.response.use(
   (response) => response,
@@ -24,23 +34,37 @@ api.interceptors.response.use(
     ) {
       originalRequest._retry = true;
 
+      if (isRefreshing) {
+        return new Promise((resolve) => {
+          subscribeTokenRefresh(() => {
+            resolve(api(originalRequest));
+          });
+        });
+      }
+
+      isRefreshing = true;
+
       try {
-        // Call refresh endpoint - cookies are sent automatically
         await axios.post(
           `${API_URL}/auth/refresh`,
           {},
           { withCredentials: true },
         );
-
-        // Retry the original request - new cookies are set automatically
-        return api(originalRequest);
+        onTokenRefreshed("");
       } catch {
-        // Refresh failed - redirect to login
-        if (typeof window !== "undefined") {
+        // Refresh failed - redirect to login (unless already there)
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/login")
+        ) {
           window.location.href = "/login";
         }
         return Promise.reject(error);
+      } finally {
+        isRefreshing = false;
       }
+
+      return api(originalRequest);
     }
 
     return Promise.reject(error);
