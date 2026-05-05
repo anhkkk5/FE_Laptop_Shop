@@ -72,7 +72,7 @@ function extractIncomingNotification(
 }
 
 export default function NotificationsPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,8 +81,10 @@ export default function NotificationsPage() {
   const [liveConnected, setLiveConnected] = useState(false);
 
   const loadNotifications = useCallback(async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user?.id) {
       setLoading(false);
+      setItems([]);
+      setUnread(0);
       return;
     }
 
@@ -92,43 +94,38 @@ export default function NotificationsPage() {
         notificationService.getMyNotifications(1, 30),
         notificationService.getUnreadCount(),
       ]);
-      setItems(list.data);
+      setItems(list.data.filter((item) => item.userId === user.id));
       setUnread(unreadResult.unread);
     } catch {
       setError("Không thể tải thông báo");
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
     void loadNotifications();
   }, [loadNotifications]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !user?.id) return;
 
     const id = setInterval(() => {
       void loadNotifications();
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(id);
-  }, [isAuthenticated, loadNotifications]);
+  }, [isAuthenticated, user?.id, loadNotifications]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user?.id) {
       setLiveConnected(false);
       return;
     }
 
-    const accessToken = localStorage.getItem("accessToken");
-    if (!accessToken) {
-      setLiveConnected(false);
-      return;
-    }
-
-    const streamUrl = `${API_URL}/notifications/stream?token=${encodeURIComponent(accessToken)}`;
-    const stream = new EventSource(streamUrl);
+    const stream = new EventSource(`${API_URL}/notifications/stream`, {
+      withCredentials: true,
+    });
 
     stream.onopen = () => {
       setLiveConnected(true);
@@ -140,6 +137,10 @@ export default function NotificationsPage() {
         const incoming = extractIncomingNotification(parsed);
 
         if (!incoming) {
+          return;
+        }
+
+        if (incoming.userId !== user.id) {
           return;
         }
 
@@ -166,7 +167,7 @@ export default function NotificationsPage() {
       stream.close();
       setLiveConnected(false);
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.id]);
 
   async function handleMarkAsRead(notificationId: number) {
     setUpdating(notificationId);

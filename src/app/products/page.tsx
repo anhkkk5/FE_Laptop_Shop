@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
@@ -34,6 +34,27 @@ function formatPrice(price: number): string {
 
 const LOW_STOCK_THRESHOLD = 5;
 
+const CATEGORY_SLUG_ALIAS: Record<string, string> = {
+  "phu-kien": "linh-kien-may-tinh-phu-kien-may-tinh",
+};
+
+type FlatCategory = Category & { depth: number };
+
+function flattenCategories(cats: Category[], depth = 0): FlatCategory[] {
+  const result: FlatCategory[] = [];
+
+  for (const cat of cats) {
+    result.push({ ...cat, depth });
+
+    const children = (cat as Category & { children?: Category[] }).children;
+    if (children && children.length > 0) {
+      result.push(...flattenCategories(children, depth + 1));
+    }
+  }
+
+  return result;
+}
+
 function ProductsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -45,6 +66,7 @@ function ProductsContent() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
+  const [metaError, setMetaError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(
     searchParams.get("search") || "",
   );
@@ -52,9 +74,49 @@ function ProductsContent() {
 
   const currentPage = Number(searchParams.get("page") || "1");
   const currentCategory = searchParams.get("categoryId") || "";
+  const currentCategorySlug = searchParams.get("category") || "";
   const currentBrand = searchParams.get("brandId") || "";
   const currentSearch = searchParams.get("search") || "";
   const currentSort = searchParams.get("sortBy") || "createdAt";
+
+  const flatCategories = useMemo(
+    () => flattenCategories(categories),
+    [categories],
+  );
+
+  const resolvedCategoryId = useMemo(() => {
+    if (currentCategory) {
+      const categoryId = Number(currentCategory);
+      return Number.isFinite(categoryId) ? categoryId : null;
+    }
+
+    if (!currentCategorySlug) {
+      return null;
+    }
+
+    const normalizedSlug =
+      CATEGORY_SLUG_ALIAS[currentCategorySlug] || currentCategorySlug;
+
+    const categoryByExactSlug = flatCategories.find(
+      (category) => category.slug === normalizedSlug,
+    );
+    if (categoryByExactSlug) {
+      return categoryByExactSlug.id;
+    }
+
+    return flatCategories.length > 0 ? -1 : null;
+  }, [currentCategory, currentCategorySlug, flatCategories]);
+
+  const selectedCategoryLabel = useMemo(() => {
+    if (!resolvedCategoryId) {
+      return "";
+    }
+
+    return (
+      flatCategories.find((category) => category.id === resolvedCategoryId)
+        ?.name || ""
+    );
+  }, [flatCategories, resolvedCategoryId]);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -64,7 +126,7 @@ function ProductsContent() {
         limit: 12,
       };
       if (currentSearch) params.search = currentSearch;
-      if (currentCategory) params.categoryId = Number(currentCategory);
+      if (resolvedCategoryId) params.categoryId = resolvedCategoryId;
       if (currentBrand) params.brandId = Number(currentBrand);
       if (currentSort) params.sortBy = currentSort;
       if (currentSort === "price") params.sortOrder = "ASC";
@@ -76,15 +138,40 @@ function ProductsContent() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, currentSearch, currentCategory, currentBrand, currentSort]);
+  }, [
+    currentPage,
+    currentSearch,
+    resolvedCategoryId,
+    currentBrand,
+    currentSort,
+  ]);
 
   const fetchMeta = useCallback(async () => {
-    const [cats, brs] = await Promise.all([
-      productClientService.getCategories(),
-      productClientService.getBrands(),
-    ]);
-    setCategories(cats);
-    setBrands(brs);
+    try {
+      const [catsResult, brandsResult] = await Promise.allSettled([
+        productClientService.getCategories(),
+        productClientService.getBrands(),
+      ]);
+
+      if (catsResult.status === "fulfilled") {
+        setCategories(catsResult.value);
+      }
+
+      if (brandsResult.status === "fulfilled") {
+        setBrands(brandsResult.value);
+      }
+
+      if (
+        catsResult.status === "rejected" ||
+        brandsResult.status === "rejected"
+      ) {
+        setMetaError("Không tải được danh mục/thương hiệu. Vui lòng thử lại.");
+      } else {
+        setMetaError(null);
+      }
+    } catch {
+      setMetaError("Không tải được danh mục/thương hiệu. Vui lòng thử lại.");
+    }
   }, []);
 
   useEffect(() => {
@@ -125,6 +212,12 @@ function ProductsContent() {
       </div>
 
       {/* Search + Filter Toggle */}
+      {metaError && (
+        <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-800">
+          {metaError}
+        </div>
+      )}
+
       <div className="flex gap-3 mb-6">
         <div className="flex flex-1 gap-2 max-w-lg">
           <Input
@@ -153,13 +246,15 @@ function ProductsContent() {
         <div className="flex flex-wrap gap-3 mb-6 p-4 rounded-lg border bg-muted/30">
           <select
             className="flex h-9 rounded-md border border-input bg-background px-3 text-sm"
-            value={currentCategory}
-            onChange={(e) => updateParams({ categoryId: e.target.value })}
+            value={resolvedCategoryId ? String(resolvedCategoryId) : ""}
+            onChange={(e) =>
+              updateParams({ categoryId: e.target.value, category: "" })
+            }
           >
             <option value="">Tất cả danh mục</option>
-            {categories.map((c) => (
+            {flatCategories.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {`${"\u00a0\u00a0".repeat(c.depth)}${c.name}`}
               </option>
             ))}
           </select>
@@ -189,7 +284,7 @@ function ProductsContent() {
       )}
 
       {/* Active filters */}
-      {(currentSearch || currentCategory || currentBrand) && (
+      {(currentSearch || resolvedCategoryId || currentBrand) && (
         <div className="flex flex-wrap gap-2 mb-6">
           {currentSearch && (
             <Badge variant="secondary" className="gap-1">
@@ -202,11 +297,11 @@ function ProductsContent() {
               </button>
             </Badge>
           )}
-          {currentCategory && (
+          {resolvedCategoryId && (
             <Badge variant="secondary" className="gap-1">
-              {categories.find((c) => String(c.id) === currentCategory)?.name}
+              {selectedCategoryLabel}
               <button
-                onClick={() => updateParams({ categoryId: "" })}
+                onClick={() => updateParams({ categoryId: "", category: "" })}
                 className="ml-1"
               >
                 ✕

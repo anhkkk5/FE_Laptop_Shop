@@ -19,6 +19,63 @@ function formatPrice(price: number): string {
   }).format(price);
 }
 
+const SPEC_LABEL_MAP: Record<string, string> = {
+  Hang: "Hãng",
+  Bao_hanh: "Bảo hành",
+  Xuat_xu: "Xuất xứ",
+  Tinh_trang: "Tình trạng",
+  Loai: "Loại",
+  Tuong_thich: "Tương thích",
+  Chat_lieu: "Chất liệu",
+  Cong_suat_ho_tro: "Công suất hỗ trợ",
+  Cong_ket_noi: "Cổng kết nối",
+  Tinh_nang: "Tính năng",
+  Luu_y: "Lưu ý",
+};
+
+const VIETNAMESE_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/\bla\b/gi, "là"],
+  [/\bsan pham\b/gi, "sản phẩm"],
+  [/\bphu hop\b/gi, "phù hợp"],
+  [/\bnhu cau\b/gi, "nhu cầu"],
+  [/\bhoc tap\b/gi, "học tập"],
+  [/\blam viec\b/gi, "làm việc"],
+  [/\bgiai tri\b/gi, "giải trí"],
+  [/\bhang ngay\b/gi, "hàng ngày"],
+  [/\bThong tin noi bat\b/gi, "Thông tin nổi bật"],
+  [/\bduoc\b/gi, "được"],
+  [/\btoan bo\b/gi, "toàn bộ"],
+  [/\bthong tin\b/gi, "thông tin"],
+  [/\bky thuat\b/gi, "kỹ thuật"],
+  [/\bday du\b/gi, "đầy đủ"],
+  [/\bgiup\b/gi, "giúp"],
+  [/\bde dang\b/gi, "dễ dàng"],
+  [/\bso sanh\b/gi, "so sánh"],
+  [/\blua chon\b/gi, "lựa chọn"],
+  [/\bthuc te\b/gi, "thực tế"],
+  [/\bChinh hang\b/g, "Chính hãng"],
+  [/\bthang\b/gi, "tháng"],
+  [/\bTrung Quoc\b/g, "Trung Quốc"],
+  [/\bMoi 100%\b/g, "Mới 100%"],
+  [/\bPhu kien laptop\b/gi, "Phụ kiện laptop"],
+  [/\bDa thiet bi\b/gi, "Đa thiết bị"],
+  [/\bNhua\/kim loai\b/gi, "Nhựa/kim loại"],
+  [/\bneu co\b/gi, "nếu có"],
+  [/\bTien loi\b/gi, "Tiện lợi"],
+];
+
+function formatSpecLabel(key: string): string {
+  if (SPEC_LABEL_MAP[key]) return SPEC_LABEL_MAP[key];
+  return key.replace(/_/g, " ");
+}
+
+function formatVietnameseText(value: string): string {
+  return VIETNAMESE_REPLACEMENTS.reduce(
+    (text, [pattern, replacement]) => text.replace(pattern, replacement),
+    value,
+  );
+}
+
 const LOW_STOCK_THRESHOLD = 5;
 
 export default function ProductDetailPage() {
@@ -128,6 +185,10 @@ export default function ProductDetailPage() {
     return [primary, ...cloned];
   }, [product]);
 
+  useEffect(() => {
+    setSelectedImage(0);
+  }, [product?.id]);
+
   if (loading) {
     return (
       <div className="container mx-auto max-w-7xl px-4 py-16 flex items-center justify-center">
@@ -234,36 +295,55 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-8 space-y-6">
-      <Link
-        href="/products"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Quay lại danh sách sản phẩm
-      </Link>
+    <div className="container mx-auto max-w-7xl px-4 py-8 space-y-8">
+      <div className="space-y-3">
+        <Link
+          href="/products"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Quay lại danh sách sản phẩm
+        </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="space-y-3">
-          <div className="aspect-[4/3] rounded-xl border bg-muted flex items-center justify-center overflow-hidden">
-            {currentImage ? (
-              <img
-                src={currentImage}
-                alt={product.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <Package className="h-16 w-16 text-muted-foreground/30" />
-            )}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <Badge variant="outline">Smart Laptop</Badge>
+          {product.category && (
+            <Badge variant="secondary">{product.category.name}</Badge>
+          )}
+          {product.brand && (
+            <Badge variant="outline">{product.brand.name}</Badge>
+          )}
+          {product.isFeatured && <Badge>Nổi bật</Badge>}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <div className="space-y-3 lg:col-span-7">
+          <div className="aspect-[4/3] rounded-2xl border bg-gradient-to-br from-muted/60 to-muted/20 p-3 shadow-sm">
+            <div className="h-full w-full overflow-hidden rounded-xl bg-background flex items-center justify-center">
+              {currentImage ? (
+                <img
+                  src={currentImage}
+                  alt={product.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Package className="h-16 w-16 text-muted-foreground/30" />
+              )}
+            </div>
           </div>
 
           {images.length > 1 && (
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 sm:grid-cols-7 gap-2">
               {images.map((img, idx) => (
                 <button
                   key={`${img.url}-${idx}`}
                   type="button"
-                  className={`aspect-square overflow-hidden rounded-md border ${idx === selectedImage ? "border-primary ring-1 ring-primary" : "border-border"}`}
+                  className={`aspect-square overflow-hidden rounded-lg border bg-background ${
+                    idx === selectedImage
+                      ? "border-primary ring-1 ring-primary"
+                      : "border-border hover:border-primary/40"
+                  }`}
                   onClick={() => setSelectedImage(idx)}
                 >
                   <img
@@ -277,112 +357,130 @@ export default function ProductDetailPage() {
           )}
         </div>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-2">
-              {product.brand && (
-                <Badge variant="secondary">{product.brand.name}</Badge>
-              )}
-              {product.category && (
-                <Badge variant="outline">{product.category.name}</Badge>
-              )}
-              {product.isFeatured && <Badge>Nổi bật</Badge>}
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {product.name}
-            </h1>
-            {product.shortDescription && (
-              <p className="text-muted-foreground">
-                {product.shortDescription}
-              </p>
-            )}
-          </div>
-
-          <div className="rounded-xl border p-4 bg-muted/20">
-            {product.salePrice ? (
-              <div className="space-y-1">
-                <p className="text-3xl font-bold text-destructive">
-                  {formatPrice(product.salePrice)}
+        <div className="space-y-4 lg:col-span-5 lg:sticky lg:top-24 lg:self-start">
+          <div className="rounded-2xl border bg-background p-5 shadow-sm space-y-4">
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold leading-tight lg:text-4xl">
+                {product.name}
+              </h1>
+              {product.shortDescription && (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {formatVietnameseText(product.shortDescription)}
                 </p>
-                <p className="text-sm text-muted-foreground line-through">
+              )}
+            </div>
+
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+              {product.salePrice ? (
+                <div className="space-y-1">
+                  <p className="text-3xl font-black text-destructive">
+                    {formatPrice(product.salePrice)}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="text-muted-foreground line-through">
+                      {formatPrice(product.price)}
+                    </span>
+                    <Badge variant="destructive">
+                      -
+                      {Math.round(
+                        (1 - product.salePrice / product.price) * 100,
+                      )}
+                      %
+                    </Badge>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-3xl font-black">
                   {formatPrice(product.price)}
                 </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <p className="text-muted-foreground">Tồn kho</p>
+                <p className="text-lg font-semibold">{product.stockQuantity}</p>
+                {isOutOfStock ? (
+                  <p className="mt-1 text-xs font-medium text-destructive">
+                    Sản phẩm hiện đã hết hàng
+                  </p>
+                ) : product.stockQuantity <= LOW_STOCK_THRESHOLD ? (
+                  <p className="mt-1 text-xs font-medium text-amber-700">
+                    Sắp hết hàng, hãy đặt sớm
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs font-medium text-emerald-700">
+                    Còn hàng
+                  </p>
+                )}
               </div>
-            ) : (
-              <p className="text-3xl font-bold">{formatPrice(product.price)}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-lg border p-3">
-              <p className="text-muted-foreground">Tồn kho</p>
-              <p className="font-semibold">{product.stockQuantity}</p>
-              {isOutOfStock ? (
-                <p className="mt-1 text-xs font-medium text-destructive">
-                  Sản phẩm hiện đã hết hàng
+              <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
+                <p className="text-muted-foreground flex items-center gap-1">
+                  <Eye className="h-4 w-4" />
+                  Lượt xem
                 </p>
-              ) : product.stockQuantity <= LOW_STOCK_THRESHOLD ? (
-                <p className="mt-1 text-xs font-medium text-amber-700">
-                  Sắp hết hàng, hãy đặt sớm
+                <p className="text-lg font-semibold">{product.viewCount}</p>
+                <p className="text-xs text-muted-foreground">
+                  {reviewMeta.averageRating.toFixed(1)} / 5 ({reviewMeta.total}{" "}
+                  đánh giá)
                 </p>
-              ) : null}
+              </div>
             </div>
-            <div className="rounded-lg border p-3">
-              <p className="text-muted-foreground flex items-center gap-1">
-                <Eye className="h-4 w-4" />
-                Lượt xem
-              </p>
-              <p className="font-semibold">{product.viewCount}</p>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={handleAddToCart}
-              disabled={adding || isOutOfStock}
-            >
-              {isOutOfStock
-                ? "Tạm hết hàng"
-                : adding
-                  ? "Đang thêm..."
-                  : "Thêm vào giỏ hàng"}
-            </Button>
-            {actionMessage && (
-              <p className="text-xs text-muted-foreground">{actionMessage}</p>
-            )}
+            <div className="space-y-2">
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={handleAddToCart}
+                disabled={adding || isOutOfStock}
+              >
+                {isOutOfStock
+                  ? "Tạm hết hàng"
+                  : adding
+                    ? "Đang thêm..."
+                    : "Thêm vào giỏ hàng"}
+              </Button>
+              {actionMessage && (
+                <p className="text-xs text-muted-foreground">{actionMessage}</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {product.description && (
-        <section className="rounded-xl border p-5 space-y-2">
+        <section className="rounded-2xl border bg-background p-5 shadow-sm space-y-3">
           <h2 className="text-lg font-semibold">Mô tả sản phẩm</h2>
-          <p className="text-sm text-muted-foreground whitespace-pre-line">
-            {product.description}
+          <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+            {formatVietnameseText(product.description)}
           </p>
         </section>
       )}
 
       {product.specs && Object.keys(product.specs).length > 0 && (
-        <section className="rounded-xl border p-5 space-y-3">
+        <section className="rounded-2xl border bg-background p-5 shadow-sm space-y-3">
           <h2 className="text-lg font-semibold">Thông số kỹ thuật</h2>
-          <div className="divide-y rounded-md border">
-            {Object.entries(product.specs).map(([key, value]) => (
+          <div className="overflow-hidden rounded-xl border">
+            {Object.entries(product.specs).map(([key, value], idx) => (
               <div
                 key={key}
-                className="grid grid-cols-3 gap-3 px-4 py-3 text-sm"
+                className={`grid grid-cols-1 gap-1 px-4 py-3 text-sm sm:grid-cols-3 sm:gap-3 ${
+                  idx % 2 === 0 ? "bg-muted/10" : "bg-background"
+                }`}
               >
-                <span className="text-muted-foreground col-span-1">{key}</span>
-                <span className="col-span-2 font-medium">{value}</span>
+                <span className="text-muted-foreground sm:col-span-1">
+                  {formatSpecLabel(key)}
+                </span>
+                <span className="font-medium sm:col-span-2">
+                  {formatVietnameseText(String(value))}
+                </span>
               </div>
             ))}
           </div>
         </section>
       )}
 
-      <section className="rounded-xl border p-5 space-y-4">
+      <section className="rounded-2xl border bg-background p-5 shadow-sm space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">Đánh giá sản phẩm</h2>
           <p className="text-sm text-muted-foreground">

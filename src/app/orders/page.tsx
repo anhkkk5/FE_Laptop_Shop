@@ -15,8 +15,12 @@ function formatPrice(price: number): string {
 const statusLabel: Record<string, string> = {
   pending: "Chờ xử lý",
   confirmed: "Đã xác nhận",
+  processing: "Kho đang xử lý",
+  ready_to_ship: "Sẵn sàng giao",
   shipping: "Đang giao",
+  delivered: "Đã giao hàng",
   completed: "Hoàn tất",
+  refunded: "Đã hoàn tiền",
   cancelled: "Đã hủy",
 };
 

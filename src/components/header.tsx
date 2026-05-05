@@ -20,7 +20,7 @@ import NotificationBell from "./notification-bell";
 import { useAuth } from "@/context/auth-context";
 
 const navCategories = [
-  { href: "/products", label: "Laptop", icon: Laptop },
+  { href: "/products?category=laptop", label: "Laptop", icon: Laptop },
   { href: "/products?category=phu-kien", label: "Phụ kiện", icon: Headphones },
   { href: "/pc-build", label: "PC Builder", icon: Cpu },
   { href: "/warranty", label: "Bảo hành", icon: Wrench },
@@ -83,7 +83,7 @@ export default function Header() {
             {isAuthenticated && user ? (
               <div className="flex items-center gap-2">
                 <Link
-                  href="/orders"
+                  href="/profile"
                   className="flex flex-col items-center gap-0.5 text-[#0f172a]"
                 >
                   <User className="h-5 w-5" />
@@ -139,6 +139,30 @@ export default function Header() {
               {cat.label}
             </Link>
           ))}
+          {isAuthenticated && user?.role === "staff" && (
+            <Link
+              href="/staff"
+              className="flex items-center gap-1 px-3 py-2 text-sm font-medium bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              Vận hành đơn
+            </Link>
+          )}
+          {isAuthenticated && user?.role === "technician" && (
+            <Link
+              href="/technician"
+              className="flex items-center gap-1 px-3 py-2 text-sm font-medium bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              Kỹ thuật
+            </Link>
+          )}
+          {isAuthenticated && user?.role === "warehouse" && (
+            <Link
+              href="/warehouse"
+              className="flex items-center gap-1 px-3 py-2 text-sm font-medium bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              Quản lý kho
+            </Link>
+          )}
           <Link
             href="/products"
             className="ml-auto flex items-center gap-1 px-3 py-2 text-sm font-medium hover:bg-white/10 transition-colors"
@@ -165,9 +189,52 @@ export default function Header() {
               </Link>
             ))}
             <hr className="border-white/20 my-2" />
-            <Link href="/login" className="block py-2 text-sm">
-              Đăng nhập / Đăng ký
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/profile"
+                  className="block py-2 text-sm"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Tài khoản của tôi
+                </Link>
+                {user?.role === "staff" && (
+                  <Link
+                    href="/staff"
+                    className="block py-2 text-sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Vận hành đơn
+                  </Link>
+                )}
+                {user?.role === "technician" && (
+                  <Link
+                    href="/technician"
+                    className="block py-2 text-sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Kỹ thuật viên
+                  </Link>
+                )}
+                {user?.role === "warehouse" && (
+                  <Link
+                    href="/warehouse"
+                    className="block py-2 text-sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Quản lý kho
+                  </Link>
+                )}
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="block py-2 text-sm"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Đăng nhập / Đăng ký
+              </Link>
+            )}
           </div>
         </div>
       )}

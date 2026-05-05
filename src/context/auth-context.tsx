@@ -11,6 +11,11 @@ import {
 import { useRouter } from "next/navigation";
 import { authService, type User } from "@/lib/auth-service";
 
+const ADMIN_ROLES = new Set(["admin"]);
+const ADMIN_APP_URL =
+  process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3003";
+const AUTH_SYNC_EVENT_KEY = "auth_sync_event";
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -32,14 +37,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
+  const redirectToAdminIfInternal = useCallback((userData: User): boolean => {
+    if (!ADMIN_ROLES.has(userData.role)) return false;
+    if (typeof window !== "undefined") {
+      window.location.assign(ADMIN_APP_URL);
+    }
+    return true;
+  }, []);
+
   const refreshUser = useCallback(async () => {
     try {
       const userData = await authService.getMe();
       setUser(userData);
+
+      if (redirectToAdminIfInternal(userData)) {
+        return;
+      }
     } catch {
       setUser(null);
     }
-  }, []);
+  }, [redirectToAdminIfInternal]);
 
   useEffect(() => {
     refreshUser().finally(() => setIsLoading(false));
@@ -47,11 +64,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      await authService.login(email, password);
+      const userData = await authService.login(email, password);
+
+      if (redirectToAdminIfInternal(userData)) {
+        return;
+      }
+
       await refreshUser();
+      if (typeof window !== "undefined") {
+        localStorage.setItem(AUTH_SYNC_EVENT_KEY, String(Date.now()));
+      }
       router.push("/");
     },
-    [refreshUser, router],
+    [refreshUser, redirectToAdminIfInternal, router],
   );
 
   const register = useCallback(
@@ -70,8 +95,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Ignore API errors during logout
     }
     setUser(null);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(AUTH_SYNC_EVENT_KEY, String(Date.now()));
+    }
     router.push("/login");
   }, [router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    function handleStorage(event: StorageEvent) {
+      if (event.key !== AUTH_SYNC_EVENT_KEY) {
+        return;
+      }
+      void refreshUser();
+    }
+
+    function handleFocus() {
+      void refreshUser();
+    }
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [refreshUser]);
 
   return (
     <AuthContext.Provider

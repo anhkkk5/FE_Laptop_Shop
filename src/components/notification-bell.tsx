@@ -7,8 +7,10 @@ import {
   notificationService,
   type NotificationItem,
 } from "@/lib/notification-service";
+import { useAuth } from "@/context/auth-context";
 
 export default function NotificationBell() {
+  const { isAuthenticated, user } = useAuth();
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -16,27 +18,45 @@ export default function NotificationBell() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchUnread = useCallback(async () => {
+    if (!isAuthenticated) {
+      setUnread(0);
+      return;
+    }
+
     try {
       const data = await notificationService.getUnreadCount();
       setUnread(data.unread);
     } catch {
       /* silent */
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const fetchList = useCallback(async () => {
+    if (!isAuthenticated) {
+      setItems([]);
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await notificationService.getMyNotifications(1, 10);
-      setItems(result.data);
+      setItems(
+        result.data.filter((notification) => notification.userId === user?.id),
+      );
     } catch {
       /* silent */
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      setUnread(0);
+      setItems([]);
+      return;
+    }
+
     void fetchUnread();
 
     // SSE for real-time notifications
@@ -50,6 +70,9 @@ export default function NotificationBell() {
       try {
         const payload = JSON.parse(event.data);
         const notification: NotificationItem = payload.data ?? payload;
+        if (notification.userId !== user.id) {
+          return;
+        }
         setUnread((prev) => prev + 1);
         setItems((prev) => [notification, ...prev].slice(0, 50));
       } catch {
@@ -58,7 +81,7 @@ export default function NotificationBell() {
     };
 
     return () => es.close();
-  }, [fetchUnread]);
+  }, [fetchUnread, isAuthenticated, user?.id]);
 
   useEffect(() => {
     if (open) {
