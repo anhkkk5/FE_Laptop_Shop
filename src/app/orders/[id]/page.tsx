@@ -136,6 +136,24 @@ export default function OrderDetailPage() {
           </div>
         ))}
         <div className="h-px bg-border" />
+        {order.couponCode && (
+          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700">
+            Đã áp mã giảm giá:{" "}
+            <span className="font-semibold">{order.couponCode}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>Tạm tính</span>
+          <span>{formatPrice(Number(order.subtotal))}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm text-emerald-600">
+          <span>Giảm giá</span>
+          <span>-{formatPrice(Number(order.discountAmount))}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>Phí vận chuyển</span>
+          <span>{formatPrice(Number(order.shippingFee))}</span>
+        </div>
         <div className="flex items-center justify-between">
           <span className="font-semibold">Tổng cộng</span>
           <span className="font-semibold">

@@ -29,6 +29,7 @@ export interface Order {
   customerPhone: string;
   shippingAddress: string;
   paymentMethod: string;
+  couponCode: string | null;
   subtotal: number;
   shippingFee: number;
   discountAmount: number;
@@ -63,6 +64,7 @@ export interface CreateOrderPayload {
   shippingAddress: string;
   note?: string;
   paymentMethod?: OrderPaymentMethod;
+  couponCode?: string;
 }
 
 export const orderService = {

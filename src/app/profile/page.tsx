@@ -6,7 +6,6 @@ import { useAuth } from "@/context/auth-context";
 
 const roleLabels: Record<string, string> = {
   customer: "Khách hàng",
-  seller: "Nhân viên (legacy)",
   staff: "Nhân viên",
   technician: "Kỹ thuật viên",
   warehouse: "Kho hàng",

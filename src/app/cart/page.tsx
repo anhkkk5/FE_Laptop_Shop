@@ -10,10 +10,32 @@ import {
   Loader2,
   ShoppingCart,
   ArrowLeft,
+  TicketPercent,
 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
+import { type CouponValidationResult } from "@/lib/coupon-service";
+
+const CHECKOUT_COUPON_PREVIEW_KEY = "checkout_coupon_preview";
+
+function getCouponPreview(): CouponValidationResult | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(CHECKOUT_COUPON_PREVIEW_KEY);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as CouponValidationResult;
+  } catch {
+    window.localStorage.removeItem(CHECKOUT_COUPON_PREVIEW_KEY);
+    return null;
+  }
+}
 
 function formatPrice(price: number): string {
   return new Intl.NumberFormat("vi-VN", {
@@ -36,11 +58,19 @@ export default function CartPage() {
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [couponPreview, setCouponPreview] =
+    useState<CouponValidationResult | null>(getCouponPreview);
 
   const subtotal = useMemo(
     () => cart.summary.subtotal || 0,
     [cart.summary.subtotal],
   );
+  const hasValidPreview =
+    couponPreview !== null && Number(couponPreview.subtotal) === subtotal;
+  const discountAmount = hasValidPreview
+    ? Number(couponPreview?.discountAmount || 0)
+    : 0;
+  const payableTotal = Math.max(subtotal - discountAmount, 0);
 
   if (!isAuthenticated) {
     return (
@@ -216,9 +246,26 @@ export default function CartPage() {
 
           <div className="rounded-xl border p-4 h-fit space-y-3">
             <h2 className="font-semibold">Tóm tắt đơn hàng</h2>
+            {couponPreview && (
+              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700">
+                <p className="inline-flex items-center gap-1 font-medium">
+                  <TicketPercent className="h-3.5 w-3.5" />
+                  Mã đã lưu: {couponPreview.code}
+                </p>
+                {!hasValidPreview && (
+                  <p className="mt-1 text-amber-700">
+                    Giỏ hàng đã thay đổi, cần áp lại mã ở bước thanh toán.
+                  </p>
+                )}
+              </div>
+            )}
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Tạm tính</span>
               <span>{formatPrice(subtotal)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm text-emerald-600">
+              <span>Giảm giá dự kiến</span>
+              <span>-{formatPrice(discountAmount)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Phí vận chuyển</span>
@@ -228,9 +275,21 @@ export default function CartPage() {
             <div className="flex items-center justify-between">
               <span className="font-semibold">Tổng cộng</span>
               <span className="font-semibold text-lg">
-                {formatPrice(subtotal)}
+                {formatPrice(payableTotal)}
               </span>
             </div>
+            {couponPreview && (
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  window.localStorage.removeItem(CHECKOUT_COUPON_PREVIEW_KEY);
+                  setCouponPreview(null);
+                }}
+              >
+                Bỏ mã đã lưu
+              </Button>
+            )}
             <Button className="w-full" onClick={() => router.push("/checkout")}>
               Tiến hành thanh toán
             </Button>

@@ -15,6 +15,7 @@ import {
   Cpu,
   ChevronDown,
   Headphones,
+  Ticket,
 } from "lucide-react";
 import NotificationBell from "./notification-bell";
 import { useAuth } from "@/context/auth-context";
@@ -23,6 +24,7 @@ const navCategories = [
   { href: "/products?category=laptop", label: "Laptop", icon: Laptop },
   { href: "/products?category=phu-kien", label: "Phụ kiện", icon: Headphones },
   { href: "/pc-build", label: "PC Builder", icon: Cpu },
+  { href: "/vouchers", label: "Khuyến mãi", icon: Ticket },
   { href: "/warranty", label: "Bảo hành", icon: Wrench },
 ];
 
