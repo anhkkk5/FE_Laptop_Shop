@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   technicianService,
   type TechnicianTicket,
@@ -30,12 +30,57 @@ const statusLabel: Record<TechnicianTicketStatus, string> = {
   rejected: "Từ chối bảo hành",
 };
 
+type TechnicianSection = "overview" | "intake" | "in-progress" | "closure";
+
 export default function TechnicianPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [tickets, setTickets] = useState<TechnicianTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<number | null>(null);
+  const [activeSection, setActiveSection] =
+    useState<TechnicianSection>("overview");
+
+  const intakeTickets = useMemo(
+    () =>
+      tickets.filter(
+        (ticket) => ticket.status === "pending" || ticket.status === "received",
+      ),
+    [tickets],
+  );
+  const inProgressTickets = useMemo(
+    () =>
+      tickets.filter(
+        (ticket) =>
+          ticket.status === "diagnosing" ||
+          ticket.status === "repairing" ||
+          ticket.status === "waiting_parts",
+      ),
+    [tickets],
+  );
+  const closureTickets = useMemo(
+    () =>
+      tickets.filter(
+        (ticket) =>
+          ticket.status === "completed" ||
+          ticket.status === "returned" ||
+          ticket.status === "rejected",
+      ),
+    [tickets],
+  );
+
+  const sectionTickets = useMemo(() => {
+    if (activeSection === "intake") return intakeTickets;
+    if (activeSection === "in-progress") return inProgressTickets;
+    if (activeSection === "closure") return closureTickets;
+    return tickets;
+  }, [
+    activeSection,
+    closureTickets,
+    inProgressTickets,
+    intakeTickets,
+    tickets,
+  ]);
 
   async function loadTickets() {
     setLoading(true);
@@ -72,7 +117,9 @@ export default function TechnicianPage() {
         estimatedDays: ticket.estimatedDays || undefined,
       });
       setTickets((prev) =>
-        prev.map((item) => (item.id === ticket.id ? { ...item, status } : item)),
+        prev.map((item) =>
+          item.id === ticket.id ? { ...item, status } : item,
+        ),
       );
     } catch {
       setError("Cập nhật trạng thái sửa chữa thất bại.");
@@ -126,15 +173,102 @@ export default function TechnicianPage() {
         </p>
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveSection("overview")}
+          className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+            activeSection === "overview"
+              ? "bg-primary text-primary-foreground"
+              : "bg-background hover:bg-muted"
+          }`}
+        >
+          Tổng quan
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSection("intake")}
+          className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+            activeSection === "intake"
+              ? "bg-primary text-primary-foreground"
+              : "bg-background hover:bg-muted"
+          }`}
+        >
+          Tiếp nhận
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSection("in-progress")}
+          className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+            activeSection === "in-progress"
+              ? "bg-primary text-primary-foreground"
+              : "bg-background hover:bg-muted"
+          }`}
+        >
+          Đang xử lý sửa chữa
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSection("closure")}
+          className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+            activeSection === "closure"
+              ? "bg-primary text-primary-foreground"
+              : "bg-background hover:bg-muted"
+          }`}
+        >
+          Hoàn tất / Trả máy
+        </button>
+      </div>
+
       {error && (
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
+      {activeSection === "overview" && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border p-4">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Tổng ticket
+            </p>
+            <p className="mt-2 text-2xl font-bold">{tickets.length}</p>
+          </div>
+          <div className="rounded-xl border p-4">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Ticket tiếp nhận
+            </p>
+            <p className="mt-2 text-2xl font-bold text-lime-600">
+              {intakeTickets.length}
+            </p>
+          </div>
+          <div className="rounded-xl border p-4">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Ticket đang sửa
+            </p>
+            <p className="mt-2 text-2xl font-bold text-emerald-700">
+              {inProgressTickets.length}
+            </p>
+          </div>
+          <div className="rounded-xl border p-4">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Ticket đã chốt
+            </p>
+            <p className="mt-2 text-2xl font-bold text-emerald-700">
+              {closureTickets.length}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl border overflow-hidden">
         <div className="border-b bg-muted/30 px-4 py-3">
-          <h2 className="font-semibold">Ticket bảo hành</h2>
+          <h2 className="font-semibold">
+            {activeSection === "intake" && "Ticket chờ tiếp nhận"}
+            {activeSection === "in-progress" && "Ticket đang xử lý sửa chữa"}
+            {activeSection === "closure" && "Ticket đã hoàn tất / trả máy"}
+            {activeSection === "overview" && "Ticket bảo hành"}
+          </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -148,11 +282,15 @@ export default function TechnicianPage() {
               </tr>
             </thead>
             <tbody>
-              {tickets.map((ticket) => (
+              {sectionTickets.map((ticket) => (
                 <tr key={ticket.id} className="border-b last:border-0">
-                  <td className="px-4 py-3 font-medium">#{ticket.ticketCode}</td>
+                  <td className="px-4 py-3 font-medium">
+                    #{ticket.ticketCode}
+                  </td>
                   <td className="px-4 py-3">{ticket.productName}</td>
-                  <td className="px-4 py-3 uppercase text-xs">{ticket.priority}</td>
+                  <td className="px-4 py-3 uppercase text-xs">
+                    {ticket.priority}
+                  </td>
                   <td className="px-4 py-3">{statusLabel[ticket.status]}</td>
                   <td className="px-4 py-3">
                     <select
@@ -175,10 +313,13 @@ export default function TechnicianPage() {
                   </td>
                 </tr>
               ))}
-              {tickets.length === 0 && (
+              {sectionTickets.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                    Không có ticket bảo hành.
+                  <td
+                    colSpan={5}
+                    className="px-4 py-8 text-center text-muted-foreground"
+                  >
+                    Không có ticket trong mục này.
                   </td>
                 </tr>
               )}

@@ -21,7 +21,9 @@ export default function VietQRPage() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<"pending" | "success" | "failed">("pending");
+  const [status, setStatus] = useState<"pending" | "success" | "failed">(
+    "pending",
+  );
 
   useEffect(() => {
     if (!orderId) return;
@@ -45,11 +47,17 @@ export default function VietQRPage() {
         if (payment.status === "success") {
           setStatus("success");
           clearInterval(interval);
-          setTimeout(() => router.push(`/payment/success?orderId=${orderId}`), 2000);
+          setTimeout(
+            () => router.push(`/payment/success?orderId=${orderId}`),
+            2000,
+          );
         } else if (payment.status === "failed") {
           setStatus("failed");
           clearInterval(interval);
-          setTimeout(() => router.push(`/payment/failed?orderId=${orderId}`), 2000);
+          setTimeout(
+            () => router.push(`/payment/failed?orderId=${orderId}`),
+            2000,
+          );
         }
       } catch {
         /* ignore polling errors */
@@ -70,7 +78,9 @@ export default function VietQRPage() {
     return (
       <div className="container mx-auto max-w-md px-4 py-16 text-center">
         <XCircle className="mx-auto h-12 w-12 text-destructive" />
-        <p className="mt-4 text-destructive">{error || "Không thể tải mã QR"}</p>
+        <p className="mt-4 text-destructive">
+          {error || "Không thể tải mã QR"}
+        </p>
         <Button className="mt-6" onClick={() => router.push("/orders")}>
           Xem đơn hàng
         </Button>
@@ -82,7 +92,11 @@ export default function VietQRPage() {
     <div className="container mx-auto max-w-md px-4 py-12 text-center">
       <h1 className="text-xl font-bold">Quét mã VietQR để thanh toán</h1>
       <p className="mt-2 text-muted-foreground text-sm">
-        Số tiền: {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(qrData.amount)}
+        Số tiền:{" "}
+        {new Intl.NumberFormat("vi-VN", {
+          style: "currency",
+          currency: "VND",
+        }).format(qrData.amount)}
       </p>
 
       <div className="mt-6 rounded-xl border bg-white p-4">
@@ -100,15 +114,19 @@ export default function VietQRPage() {
       </div>
 
       {status === "success" && (
-        <div className="mt-6 flex items-center justify-center gap-2 text-green-600">
+        <div className="mt-6 flex items-center justify-center gap-2 text-emerald-600">
           <CheckCircle className="h-5 w-5" />
-          <span className="font-medium">Thanh toán thành công! Đang chuyển hướng...</span>
+          <span className="font-medium">
+            Thanh toán thành công! Đang chuyển hướng...
+          </span>
         </div>
       )}
       {status === "failed" && (
         <div className="mt-6 flex items-center justify-center gap-2 text-destructive">
           <XCircle className="h-5 w-5" />
-          <span className="font-medium">Thanh toán thất bại. Đang chuyển hướng...</span>
+          <span className="font-medium">
+            Thanh toán thất bại. Đang chuyển hướng...
+          </span>
         </div>
       )}
       {status === "pending" && (
@@ -118,7 +136,11 @@ export default function VietQRPage() {
         </p>
       )}
 
-      <Button variant="outline" className="mt-8" onClick={() => router.push(`/orders/${orderId}`)}>
+      <Button
+        variant="outline"
+        className="mt-8"
+        onClick={() => router.push(`/orders/${orderId}`)}
+      >
         Xem chi tiết đơn hàng
       </Button>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
@@ -67,6 +67,8 @@ function ProductsContent() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [metaError, setMetaError] = useState<string | null>(null);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const fetchCounterRef = useRef(0);
   const [searchInput, setSearchInput] = useState(
     searchParams.get("search") || "",
   );
@@ -119,6 +121,7 @@ function ProductsContent() {
   }, [flatCategories, resolvedCategoryId]);
 
   const fetchProducts = useCallback(async () => {
+    const fetchId = ++fetchCounterRef.current;
     setLoading(true);
     try {
       const params: Record<string, string | number> = {
@@ -126,17 +129,18 @@ function ProductsContent() {
         limit: 12,
       };
       if (currentSearch) params.search = currentSearch;
-      if (resolvedCategoryId) params.categoryId = resolvedCategoryId;
+      if (resolvedCategoryId && resolvedCategoryId > 0) params.categoryId = resolvedCategoryId;
       if (currentBrand) params.brandId = Number(currentBrand);
       if (currentSort) params.sortBy = currentSort;
       if (currentSort === "price") params.sortOrder = "ASC";
 
       const data = await productClientService.getProducts(params);
+      if (fetchId !== fetchCounterRef.current) return;
       setResult(data);
     } catch {
       // silent
     } finally {
-      setLoading(false);
+      if (fetchId === fetchCounterRef.current) setLoading(false);
     }
   }, [
     currentPage,
@@ -171,6 +175,8 @@ function ProductsContent() {
       }
     } catch {
       setMetaError("Không tải được danh mục/thương hiệu. Vui lòng thử lại.");
+    } finally {
+      setCategoriesLoaded(true);
     }
   }, []);
 
@@ -179,8 +185,9 @@ function ProductsContent() {
   }, [fetchMeta]);
 
   useEffect(() => {
+    if (currentCategorySlug && !categoriesLoaded) return;
     fetchProducts();
-  }, [fetchProducts]);
+  }, [fetchProducts, currentCategorySlug, categoriesLoaded]);
 
   function updateParams(updates: Record<string, string>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -213,7 +220,7 @@ function ProductsContent() {
 
       {/* Search + Filter Toggle */}
       {metaError && (
-        <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-800">
+        <div className="mb-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
           {metaError}
         </div>
       )}
@@ -382,7 +389,7 @@ function ProductsContent() {
                       Hết hàng
                     </Badge>
                   ) : product.stockQuantity <= LOW_STOCK_THRESHOLD ? (
-                    <Badge className="absolute bottom-2 left-2 border-amber-500/50 bg-amber-500/10 text-amber-700">
+                    <Badge className="absolute bottom-2 left-2 border-emerald-500/50 bg-emerald-500/10 text-emerald-700">
                       Sắp hết hàng
                     </Badge>
                   ) : null}
@@ -422,7 +429,7 @@ function ProductsContent() {
                       product.stockQuantity <= 0
                         ? "text-destructive"
                         : product.stockQuantity <= LOW_STOCK_THRESHOLD
-                          ? "text-amber-700"
+                          ? "text-emerald-700"
                           : "text-muted-foreground"
                     }`}
                   >

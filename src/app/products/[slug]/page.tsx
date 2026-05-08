@@ -405,7 +405,7 @@ export default function ProductDetailPage() {
                     Sản phẩm hiện đã hết hàng
                   </p>
                 ) : product.stockQuantity <= LOW_STOCK_THRESHOLD ? (
-                  <p className="mt-1 text-xs font-medium text-amber-700">
+                  <p className="mt-1 text-xs font-medium text-lime-700">
                     Sắp hết hàng, hãy đặt sớm
                   </p>
                 ) : (

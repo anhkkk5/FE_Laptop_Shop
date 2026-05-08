@@ -19,6 +19,55 @@ export interface InventorySummary {
   lowStockThreshold: number;
 }
 
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface WarehouseProductsResult {
+  items: WarehouseProduct[];
+  meta: PaginationMeta;
+}
+
+export type StockMovementType =
+  | "import"
+  | "export"
+  | "adjust"
+  | "reserve"
+  | "release"
+  | "confirm";
+
+export interface StockMovementRecord {
+  id: number;
+  productId: number;
+  type: StockMovementType;
+  quantity: number;
+  beforeQty: number;
+  afterQty: number;
+  reason: string | null;
+  createdBy: number | null;
+  createdAt: string;
+}
+
+export interface StockMovementsResult {
+  items: StockMovementRecord[];
+  meta: PaginationMeta;
+}
+
+export interface StockActionPayload {
+  productId: number;
+  quantity: number;
+  reason?: string;
+}
+
+export type AdjustTarget = "available" | "damaged" | "incoming";
+
+export interface AdjustStockPayload extends StockActionPayload {
+  target: AdjustTarget;
+}
+
 type InventoryItem = {
   id: number;
   productId: number;
@@ -57,6 +106,18 @@ type InventoryListApiPayload =
       limit?: number;
     };
 
+type StockMovementsApiPayload = {
+  data?: StockMovementRecord[];
+  meta?: RawPaginationMeta;
+};
+
+type RawPaginationMeta = {
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+};
+
 function normalizeInventories(
   payload: InventoryListApiPayload,
 ): InventoryItem[] {
@@ -66,6 +127,63 @@ function normalizeInventories(
     return payload.data.data;
   }
   return [];
+}
+
+function extractRawMeta(payload: InventoryListApiPayload): RawPaginationMeta {
+  if (Array.isArray(payload)) return {};
+  if (!Array.isArray(payload?.data) && payload?.data?.meta) {
+    return payload.data.meta;
+  }
+  if (payload?.meta) {
+    return payload.meta;
+  }
+
+  return {
+    total: payload?.total,
+    page: payload?.page,
+    limit: payload?.limit,
+  };
+}
+
+function toPaginationMeta(
+  payload: InventoryListApiPayload,
+  defaultPage: number,
+  defaultLimit: number,
+  itemCount: number,
+): PaginationMeta {
+  const rawMeta = extractRawMeta(payload);
+  const total = Number(rawMeta.total ?? itemCount);
+  const page = Number(rawMeta.page ?? defaultPage);
+  const limit = Number(rawMeta.limit ?? defaultLimit);
+  const totalPages =
+    Number(rawMeta.totalPages) || (limit > 0 ? Math.ceil(total / limit) : 1);
+
+  return {
+    total,
+    page,
+    limit,
+    totalPages: Math.max(1, totalPages),
+  };
+}
+
+function toPaginationMetaFromRaw(
+  rawMeta: RawPaginationMeta | undefined,
+  defaultPage: number,
+  defaultLimit: number,
+  itemCount: number,
+): PaginationMeta {
+  const total = Number(rawMeta?.total ?? itemCount);
+  const page = Number(rawMeta?.page ?? defaultPage);
+  const limit = Number(rawMeta?.limit ?? defaultLimit);
+  const totalPages =
+    Number(rawMeta?.totalPages) || (limit > 0 ? Math.ceil(total / limit) : 1);
+
+  return {
+    total,
+    page,
+    limit,
+    totalPages: Math.max(1, totalPages),
+  };
 }
 
 function toWarehouseProduct(item: InventoryItem): WarehouseProduct {
@@ -126,7 +244,7 @@ export const warehouseService = {
     page?: number;
     limit?: number;
     search?: string;
-  }): Promise<WarehouseProduct[]> {
+  }): Promise<WarehouseProductsResult> {
     const params = new URLSearchParams();
     if (options?.page) params.set("page", String(options.page));
     if (options?.limit) params.set("limit", String(options.limit));
@@ -136,7 +254,59 @@ export const warehouseService = {
     const { data } = await api.get<InventoryListApiPayload>(
       `/inventory${qs ? `?${qs}` : ""}`,
     );
+    const items = normalizeInventories(data).map(toWarehouseProduct);
+    const meta = toPaginationMeta(
+      data,
+      options?.page ?? 1,
+      options?.limit ?? 20,
+      items.length,
+    );
 
-    return normalizeInventories(data).map(toWarehouseProduct);
+    return { items, meta };
+  },
+
+  async importStock(payload: StockActionPayload): Promise<void> {
+    await api.post("/inventory/import", payload);
+  },
+
+  async exportStock(payload: StockActionPayload): Promise<void> {
+    await api.post("/inventory/export", payload);
+  },
+
+  async adjustStock(payload: AdjustStockPayload): Promise<void> {
+    await api.post("/inventory/adjust", payload);
+  },
+
+  async getMovements(
+    productId: number,
+    options?: {
+      page?: number;
+      limit?: number;
+      movementType?: StockMovementType;
+      fromDate?: string;
+      toDate?: string;
+    },
+  ): Promise<StockMovementsResult> {
+    const params = new URLSearchParams();
+    if (options?.page) params.set("page", String(options.page));
+    if (options?.limit) params.set("limit", String(options.limit));
+    if (options?.movementType) params.set("movementType", options.movementType);
+    if (options?.fromDate) params.set("fromDate", options.fromDate);
+    if (options?.toDate) params.set("toDate", options.toDate);
+
+    const qs = params.toString();
+    const { data } = await api.get<StockMovementsApiPayload>(
+      `/inventory/${productId}/movements${qs ? `?${qs}` : ""}`,
+    );
+
+    const items = Array.isArray(data?.data) ? data.data : [];
+    const meta = toPaginationMetaFromRaw(
+      data?.meta,
+      options?.page ?? 1,
+      options?.limit ?? 10,
+      items.length,
+    );
+
+    return { items, meta };
   },
 };

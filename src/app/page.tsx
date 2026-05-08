@@ -41,7 +41,7 @@ const heroSlides = [
       "Laptop văn phòng, gaming và phụ kiện chính hãng giảm sâu mỗi ngày",
     cta: "Mua ngay",
     badge: "Giá tốt hôm nay",
-    bg: "from-[#0f172a] via-[#1e293b] to-[#334155]",
+    bg: "from-emerald-700 via-emerald-600 to-green-600",
     text: "text-white",
   },
   {
@@ -50,7 +50,7 @@ const heroSlides = [
     subtitle: "Combo bàn phím, chuột, tai nghe tối ưu cho học tập và làm việc",
     cta: "Xem combo",
     badge: "Combo hot",
-    bg: "from-[#0b3b5a] via-[#0f766e] to-[#14b8a6]",
+    bg: "from-lime-500 via-emerald-500 to-green-500",
     text: "text-white",
   },
   {
@@ -59,7 +59,7 @@ const heroSlides = [
     subtitle: "Nhận máy ngay, chia nhỏ chi phí trong 3-12 tháng",
     cta: "Tìm hiểu",
     badge: "Trả góp",
-    bg: "from-[#7c2d12] via-[#c2410c] to-[#ea580c]",
+    bg: "from-green-700 via-emerald-700 to-lime-700",
     text: "text-white",
   },
 ];
@@ -89,13 +89,13 @@ const quickPromoCards = [
     title: "Deal dưới 15 triệu",
     desc: "Laptop học tập, văn phòng giá dễ mua",
     href: "/products?maxPrice=15000000",
-    tone: "from-[#134e4a] to-[#0f766e]",
+    tone: "from-emerald-600 to-green-600",
   },
   {
     title: "Gaming gear sale",
     desc: "Chuột, tai nghe, bàn phím ưu đãi theo tuần",
     href: "/products?category=phu-kien",
-    tone: "from-[#7c2d12] to-[#ea580c]",
+    tone: "from-lime-600 to-emerald-600",
   },
 ];
 
@@ -199,10 +199,10 @@ export default function Home() {
   }, [activeFlashTab, products]);
 
   return (
-    <main className="flex-1 bg-[linear-gradient(180deg,#fffaf2_0%,#f8fafc_36%,#f8fafc_100%)] pb-12">
+    <main className="flex-1 bg-[linear-gradient(180deg,#f2fff5_0%,#f6fff8_36%,#f7fcf8_100%)] pb-12">
       <div className="mx-auto max-w-7xl px-4 pt-5 md:px-6 lg:px-8">
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-[2.25fr_1fr]">
-          <div className="relative overflow-hidden rounded-[28px] border border-slate-200/70 bg-white shadow-[0_22px_55px_-28px_rgba(15,23,42,0.42)]">
+          <div className="relative overflow-hidden rounded-[28px] border border-emerald-200/80 bg-white shadow-[0_22px_55px_-30px_rgba(16,185,129,0.35)]">
             <div className="overflow-hidden" ref={emblaRef}>
               <div className="flex">
                 {heroSlides.map((slide) => (
@@ -225,7 +225,7 @@ export default function Home() {
                         </p>
                         <Link
                           href="/products"
-                          className="inline-flex items-center rounded-full bg-white px-5 py-2.5 text-sm font-bold text-slate-900 transition hover:translate-y-[-1px] hover:bg-slate-100"
+                          className="inline-flex items-center rounded-full bg-white px-5 py-2.5 text-sm font-bold text-emerald-900 transition hover:translate-y-[-1px] hover:bg-emerald-50"
                         >
                           {slide.cta}
                         </Link>
@@ -238,13 +238,13 @@ export default function Home() {
 
             <button
               onClick={scrollPrev}
-              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full border border-white/40 bg-white/90 p-2 text-slate-700 shadow-sm transition hover:bg-white"
+              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full border border-white/40 bg-white/90 p-2 text-emerald-700 shadow-sm transition hover:bg-white"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
             <button
               onClick={scrollNext}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-white/40 bg-white/90 p-2 text-slate-700 shadow-sm transition hover:bg-white"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-white/40 bg-white/90 p-2 text-emerald-700 shadow-sm transition hover:bg-white"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -272,7 +272,7 @@ export default function Home() {
                 <p className="mt-1 text-xs text-white/85">{card.desc}</p>
                 <Link
                   href={card.href}
-                  className="mt-4 inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-800"
+                  className="mt-4 inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-emerald-800"
                 >
                   Khám phá
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -284,23 +284,25 @@ export default function Home() {
               {serviceHighlights.map((item) => (
                 <article
                   key={item.title}
-                  className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_12px_35px_-30px_rgba(15,23,42,0.9)]"
+                  className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-[0_12px_35px_-30px_rgba(16,185,129,0.35)]"
                 >
-                  <item.icon className="h-5 w-5 text-teal-700" />
-                  <h3 className="mt-2 text-sm font-bold text-slate-900">
+                  <item.icon className="h-5 w-5 text-emerald-700" />
+                  <h3 className="mt-2 text-sm font-bold text-emerald-950">
                     {item.title}
                   </h3>
-                  <p className="mt-1 text-xs text-slate-600">{item.desc}</p>
+                  <p className="mt-1 text-xs text-emerald-800/80">
+                    {item.desc}
+                  </p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="mt-5 rounded-[26px] border border-slate-200/80 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-4 text-white shadow-[0_24px_45px_-32px_rgba(2,6,23,0.85)] md:p-5">
+        <section className="mt-5 rounded-[26px] border border-emerald-200/80 bg-gradient-to-r from-emerald-700 via-emerald-600 to-green-600 p-4 text-white shadow-[0_24px_45px_-32px_rgba(16,185,129,0.55)] md:p-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5 fill-amber-300 text-amber-300" />
+              <Zap className="h-5 w-5 fill-lime-200 text-lime-200" />
               <h2 className="text-base font-bold uppercase tracking-wide">
                 Flash Deal Hôm Nay
               </h2>
@@ -311,7 +313,7 @@ export default function Home() {
               {[countdown.h, countdown.m, countdown.s].map((num, i) => (
                 <span
                   key={i}
-                  className="rounded-lg bg-white px-2 py-1 text-sm font-bold text-slate-900"
+                  className="rounded-lg bg-white px-2 py-1 text-sm font-bold text-emerald-900"
                 >
                   {num.toString().padStart(2, "0")}
                 </span>
@@ -328,7 +330,7 @@ export default function Home() {
                   onClick={() => setActiveFlashTab(tab.label)}
                   className={`shrink-0 rounded-full px-4 py-1.5 text-left text-xs font-semibold transition md:text-sm ${
                     active
-                      ? "bg-white text-slate-900"
+                      ? "bg-white text-emerald-900"
                       : "bg-white/10 text-white hover:bg-white/20"
                   }`}
                 >
@@ -365,7 +367,7 @@ export default function Home() {
                     <h3 className="line-clamp-2 text-sm font-semibold text-white">
                       {product.name}
                     </h3>
-                    <p className="mt-2 text-base font-black text-amber-300">
+                    <p className="mt-2 text-base font-black text-lime-200">
                       {formatPrice(product.salePrice ?? product.price)}
                     </p>
                   </article>
@@ -375,14 +377,14 @@ export default function Home() {
           )}
         </section>
 
-        <section className="mt-5 rounded-3xl border border-slate-200/80 bg-white p-4 md:p-5">
+        <section className="mt-5 rounded-3xl border border-emerald-100 bg-white p-4 md:p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-black text-slate-900">
+            <h2 className="text-lg font-black text-emerald-950">
               Thương hiệu nổi bật
             </h2>
             <Link
               href="/products"
-              className="text-xs font-semibold uppercase tracking-[0.12em] text-teal-700"
+              className="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700"
             >
               Xem tất cả
             </Link>
@@ -392,7 +394,7 @@ export default function Home() {
               <Link
                 key={brand.id}
                 href={`/products?brand=${brand.slug}`}
-                className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 md:text-sm"
+                className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-800 transition hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-900 md:text-sm"
               >
                 {brand.name}
               </Link>
@@ -403,16 +405,16 @@ export default function Home() {
         <section className="mt-6">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-black text-slate-900">
+              <h2 className="text-2xl font-black text-emerald-950">
                 Sản phẩm nổi bật
               </h2>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-emerald-800/70">
                 Lựa chọn phổ biến trong ngày
               </p>
             </div>
             <Link
               href="/products"
-              className="text-sm font-semibold text-teal-700 transition hover:text-teal-800"
+              className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800"
             >
               Xem tất cả →
             </Link>
@@ -423,12 +425,12 @@ export default function Home() {
               {Array.from({ length: 8 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="h-80 animate-pulse rounded-3xl border border-slate-200 bg-white"
+                  className="h-80 animate-pulse rounded-3xl border border-emerald-100 bg-white"
                 />
               ))}
             </div>
           ) : topProducts.length === 0 ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-slate-500">
+            <div className="rounded-3xl border border-emerald-100 bg-white p-10 text-center text-emerald-800/70">
               Chưa có sản phẩm hiển thị.
             </div>
           ) : (
@@ -438,9 +440,9 @@ export default function Home() {
                   !!product.salePrice && product.salePrice < product.price;
                 return (
                   <Link key={product.id} href={`/products/${product.slug}`}>
-                    <article className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-3 shadow-[0_16px_32px_-28px_rgba(15,23,42,0.85)] transition hover:-translate-y-1 hover:shadow-[0_20px_35px_-25px_rgba(15,23,42,0.45)]">
+                    <article className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-emerald-100 bg-white p-3 shadow-[0_16px_32px_-28px_rgba(16,185,129,0.35)] transition hover:-translate-y-1 hover:shadow-[0_20px_35px_-25px_rgba(16,185,129,0.45)]">
                       {hasDiscount && (
-                        <span className="absolute left-3 top-3 rounded-full bg-rose-600 px-2.5 py-1 text-[11px] font-bold text-white">
+                        <span className="absolute left-3 top-3 rounded-full bg-lime-500 px-2.5 py-1 text-[11px] font-bold text-white">
                           -
                           {Math.round(
                             (1 -
@@ -451,7 +453,7 @@ export default function Home() {
                         </span>
                       )}
 
-                      <div className="relative mb-3 flex h-44 items-center justify-center rounded-2xl bg-slate-50">
+                      <div className="relative mb-3 flex h-44 items-center justify-center rounded-2xl bg-emerald-50/60">
                         {product.images?.[0]?.url ? (
                           <Image
                             src={product.images[0].url}
@@ -461,36 +463,36 @@ export default function Home() {
                             sizes="(max-width: 768px) 50vw, 25vw"
                           />
                         ) : (
-                          <div className="text-4xl font-black text-slate-200">
+                          <div className="text-4xl font-black text-emerald-200">
                             {product.brand?.name?.[0] ?? "P"}
                           </div>
                         )}
                       </div>
 
-                      <h3 className="line-clamp-2 text-sm font-bold text-slate-900">
+                      <h3 className="line-clamp-2 text-sm font-bold text-emerald-950">
                         {product.name}
                       </h3>
-                      <p className="mt-1 line-clamp-1 text-xs text-slate-500">
+                      <p className="mt-1 line-clamp-1 text-xs text-emerald-800/70">
                         {product.specs
                           ? Object.values(product.specs).slice(0, 2).join(" • ")
                           : (product.shortDescription ?? "")}
                       </p>
 
-                      <div className="mt-2 flex items-center gap-1 text-amber-500">
+                      <div className="mt-2 flex items-center gap-1 text-lime-500">
                         {Array.from({ length: 5 }).map((_, i) => (
                           <Star key={i} className="h-3.5 w-3.5 fill-current" />
                         ))}
-                        <span className="ml-1 text-xs text-slate-500">
+                        <span className="ml-1 text-xs text-emerald-800/70">
                           Đánh giá tốt
                         </span>
                       </div>
 
                       <div className="mt-auto pt-3">
-                        <p className="text-lg font-black text-rose-600">
+                        <p className="text-lg font-black text-emerald-600">
                           {formatPrice(product.salePrice ?? product.price)}
                         </p>
                         {hasDiscount && (
-                          <p className="text-xs text-slate-400 line-through">
+                          <p className="text-xs text-emerald-700/50 line-through">
                             {formatPrice(product.price)}
                           </p>
                         )}
@@ -504,47 +506,49 @@ export default function Home() {
         </section>
 
         <section className="mt-7 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <article className="rounded-3xl bg-gradient-to-br from-[#115e59] to-[#0f766e] p-6 text-white shadow-[0_24px_45px_-30px_rgba(8,47,73,0.9)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100">
+          <article className="rounded-3xl bg-gradient-to-br from-emerald-700 to-green-600 p-6 text-white shadow-[0_24px_45px_-30px_rgba(16,185,129,0.55)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-lime-100">
               Ưu đãi theo tuần
             </p>
             <h3 className="mt-2 text-2xl font-black leading-tight">
               Build góc làm việc chuẩn công nghệ
             </h3>
-            <p className="mt-2 text-sm text-cyan-50/90">
+            <p className="mt-2 text-sm text-lime-50/90">
               Chuột + bàn phím + tai nghe giảm thêm đến 12% khi mua cùng laptop.
             </p>
             <Link
               href="/products?category=phu-kien"
-              className="mt-5 inline-flex rounded-full bg-white px-4 py-2 text-sm font-bold text-cyan-700"
+              className="mt-5 inline-flex rounded-full bg-white px-4 py-2 text-sm font-bold text-emerald-700"
             >
               Khám phá phụ kiện
             </Link>
           </article>
 
-          <article className="rounded-3xl bg-gradient-to-br from-[#9a3412] to-[#f97316] p-6 text-white shadow-[0_24px_45px_-30px_rgba(124,45,18,0.85)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-100">
+          <article className="rounded-3xl bg-gradient-to-br from-lime-600 to-emerald-500 p-6 text-white shadow-[0_24px_45px_-30px_rgba(16,185,129,0.55)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-lime-100">
               Dành cho sinh viên
             </p>
             <h3 className="mt-2 text-2xl font-black leading-tight">
               Laptop gọn nhẹ - pin lâu - trả chậm 0%
             </h3>
-            <p className="mt-2 text-sm text-orange-50/90">
+            <p className="mt-2 text-sm text-lime-50/90">
               Tặng balo + vệ sinh máy miễn phí trong năm đầu tiên.
             </p>
             <Link
               href="/products?category=laptop"
-              className="mt-5 inline-flex rounded-full bg-white px-4 py-2 text-sm font-bold text-orange-700"
+              className="mt-5 inline-flex rounded-full bg-white px-4 py-2 text-sm font-bold text-emerald-700"
             >
               Xem laptop phù hợp
             </Link>
           </article>
         </section>
 
-        <section className="mt-8 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-[0_15px_30px_-26px_rgba(15,23,42,0.75)] md:p-6">
+        <section className="mt-8 rounded-3xl border border-emerald-100 bg-white p-4 shadow-[0_15px_30px_-26px_rgba(16,185,129,0.35)] md:p-6">
           <div className="mb-4 flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-amber-500" />
-            <h2 className="text-xl font-black text-slate-900">Gợi ý cho bạn</h2>
+            <Sparkles className="h-5 w-5 text-emerald-500" />
+            <h2 className="text-xl font-black text-emerald-950">
+              Gợi ý cho bạn
+            </h2>
           </div>
 
           {loading ? (
@@ -552,12 +556,12 @@ export default function Home() {
               {Array.from({ length: 4 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="h-24 animate-pulse rounded-2xl border border-slate-200 bg-slate-100"
+                  className="h-24 animate-pulse rounded-2xl border border-emerald-100 bg-emerald-50"
                 />
               ))}
             </div>
           ) : suggestProducts.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-sm text-emerald-800/80">
               Chưa có gợi ý phù hợp ở thời điểm này.
             </div>
           ) : (
@@ -567,11 +571,11 @@ export default function Home() {
                   key={`suggest-${product.id}`}
                   href={`/products/${product.slug}`}
                 >
-                  <article className="rounded-2xl border border-slate-200 bg-slate-50 p-3 transition hover:border-amber-200 hover:bg-white">
-                    <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                  <article className="rounded-2xl border border-emerald-100 bg-emerald-50 p-3 transition hover:border-emerald-300 hover:bg-white">
+                    <h3 className="line-clamp-2 text-sm font-semibold text-emerald-950">
                       {product.name}
                     </h3>
-                    <p className="mt-2 text-sm font-bold text-amber-700">
+                    <p className="mt-2 text-sm font-bold text-emerald-700">
                       {formatPrice(product.salePrice ?? product.price)}
                     </p>
                   </article>

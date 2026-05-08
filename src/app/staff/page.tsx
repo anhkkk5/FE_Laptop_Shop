@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   staffOpsService,
   type StaffOrder,
@@ -41,6 +41,12 @@ const statusLabel: Record<StaffOrderStatus, string> = {
   cancelled: "Đã hủy",
 };
 
+type StaffSection =
+  | "overview"
+  | "new-orders"
+  | "warehouse-handoff"
+  | "delivery-closure";
+
 function formatPrice(value: number): string {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -54,6 +60,42 @@ export default function StaffOpsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingOrderId, setSavingOrderId] = useState<number | null>(null);
+  const [activeSection, setActiveSection] = useState<StaffSection>("overview");
+
+  const pendingOrders = useMemo(
+    () => orders.filter((order) => order.status === "pending"),
+    [orders],
+  );
+  const warehouseHandoffOrders = useMemo(
+    () =>
+      orders.filter(
+        (order) =>
+          order.status === "confirmed" ||
+          order.status === "processing" ||
+          order.status === "ready_to_ship",
+      ),
+    [orders],
+  );
+  const deliveryClosureOrders = useMemo(
+    () =>
+      orders.filter(
+        (order) => order.status === "shipping" || order.status === "delivered",
+      ),
+    [orders],
+  );
+
+  const sectionOrders = useMemo(() => {
+    if (activeSection === "new-orders") return pendingOrders;
+    if (activeSection === "warehouse-handoff") return warehouseHandoffOrders;
+    if (activeSection === "delivery-closure") return deliveryClosureOrders;
+    return orders;
+  }, [
+    activeSection,
+    deliveryClosureOrders,
+    orders,
+    pendingOrders,
+    warehouseHandoffOrders,
+  ]);
 
   async function loadOrders() {
     setError(null);
@@ -141,15 +183,102 @@ export default function StaffOpsPage() {
         </p>
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveSection("overview")}
+          className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+            activeSection === "overview"
+              ? "bg-primary text-primary-foreground"
+              : "bg-background hover:bg-muted"
+          }`}
+        >
+          Tổng quan
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSection("new-orders")}
+          className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+            activeSection === "new-orders"
+              ? "bg-primary text-primary-foreground"
+              : "bg-background hover:bg-muted"
+          }`}
+        >
+          Đơn mới cần duyệt
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSection("warehouse-handoff")}
+          className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+            activeSection === "warehouse-handoff"
+              ? "bg-primary text-primary-foreground"
+              : "bg-background hover:bg-muted"
+          }`}
+        >
+          Đang phối hợp kho
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSection("delivery-closure")}
+          className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+            activeSection === "delivery-closure"
+              ? "bg-primary text-primary-foreground"
+              : "bg-background hover:bg-muted"
+          }`}
+        >
+          Chốt giao hàng
+        </button>
+      </div>
+
       {error && (
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
+      {activeSection === "overview" && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border p-4">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Tổng đơn đang theo dõi
+            </p>
+            <p className="mt-2 text-2xl font-bold">{orders.length}</p>
+          </div>
+          <div className="rounded-xl border p-4">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Đơn mới chờ duyệt
+            </p>
+            <p className="mt-2 text-2xl font-bold text-lime-600">
+              {pendingOrders.length}
+            </p>
+          </div>
+          <div className="rounded-xl border p-4">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Đơn kho đang xử lý
+            </p>
+            <p className="mt-2 text-2xl font-bold text-emerald-700">
+              {warehouseHandoffOrders.length}
+            </p>
+          </div>
+          <div className="rounded-xl border p-4">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Đơn chờ chốt
+            </p>
+            <p className="mt-2 text-2xl font-bold text-emerald-700">
+              {deliveryClosureOrders.length}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl border overflow-hidden">
         <div className="border-b bg-muted/30 px-4 py-3">
-          <h2 className="font-semibold">Đơn hàng gần đây</h2>
+          <h2 className="font-semibold">
+            {activeSection === "new-orders" && "Đơn mới cần duyệt"}
+            {activeSection === "warehouse-handoff" && "Đơn đang phối hợp kho"}
+            {activeSection === "delivery-closure" && "Đơn cần chốt giao"}
+            {activeSection === "overview" && "Danh sách đơn hàng gần đây"}
+          </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -166,7 +295,7 @@ export default function StaffOpsPage() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => {
+              {sectionOrders.map((order) => {
                 const allowedTransitions = getStaffAllowedTransitions(
                   order.status,
                 );
@@ -195,7 +324,7 @@ export default function StaffOpsPage() {
                       <span
                         className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
                           responsibleRole === "warehouse"
-                            ? "bg-sky-100 text-sky-700"
+                            ? "bg-emerald-100 text-emerald-700"
                             : "bg-emerald-100 text-emerald-700"
                         }`}
                       >
@@ -228,13 +357,13 @@ export default function StaffOpsPage() {
                   </tr>
                 );
               })}
-              {orders.length === 0 && (
+              {sectionOrders.length === 0 && (
                 <tr>
                   <td
                     colSpan={6}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
-                    Không có đơn hàng.
+                    Không có đơn hàng trong mục này.
                   </td>
                 </tr>
               )}

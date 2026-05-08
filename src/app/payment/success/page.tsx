@@ -12,7 +12,7 @@ function PaymentSuccessInner() {
 
   return (
     <div className="container mx-auto max-w-md px-4 py-16 text-center">
-      <CheckCircle className="mx-auto h-16 w-16 text-green-600" />
+      <CheckCircle className="mx-auto h-16 w-16 text-emerald-600" />
       <h1 className="mt-6 text-2xl font-bold">Thanh toán thành công</h1>
       <p className="mt-2 text-muted-foreground">
         Cảm ơn bạn đã đặt hàng. Chúng tôi sẽ xử lý đơn hàng sớm nhất có thể.

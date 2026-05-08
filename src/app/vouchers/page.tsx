@@ -19,7 +19,11 @@ function formatPrice(price: number): string {
   }).format(price);
 }
 
-function discountLabel(type: CouponDiscountType, value: number, coupon: Coupon) {
+function discountLabel(
+  type: CouponDiscountType,
+  value: number,
+  coupon: Coupon,
+) {
   switch (type) {
     case "percentage":
       return `Giảm ${value}%${coupon.maxDiscountAmount ? ` (tối đa ${formatPrice(Number(coupon.maxDiscountAmount))})` : ""}`;
@@ -37,13 +41,13 @@ function discountLabel(type: CouponDiscountType, value: number, coupon: Coupon) 
 function typeColor(type: CouponDiscountType) {
   switch (type) {
     case "percentage":
-      return "bg-blue-100 text-blue-700";
-    case "fixed_amount":
       return "bg-emerald-100 text-emerald-700";
+    case "fixed_amount":
+      return "bg-lime-100 text-lime-700";
     case "free_shipping":
-      return "bg-purple-100 text-purple-700";
+      return "bg-emerald-100 text-emerald-700";
     case "buy_x_get_y":
-      return "bg-orange-100 text-orange-700";
+      return "bg-teal-100 text-teal-700";
     default:
       return "bg-gray-100 text-gray-700";
   }
@@ -241,11 +245,13 @@ export default function VouchersPage() {
                 )}
                 {v.usageLimit !== null && (
                   <span className="bg-muted px-2 py-0.5 rounded">
-                    Còn {Math.max(Number(v.usageLimit) - Number(v.usageCount), 0)} lượt
+                    Còn{" "}
+                    {Math.max(Number(v.usageLimit) - Number(v.usageCount), 0)}{" "}
+                    lượt
                   </span>
                 )}
                 {v.firstTimeCustomerOnly && (
-                  <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
+                  <span className="bg-lime-100 text-lime-700 px-2 py-0.5 rounded">
                     Khách mới
                   </span>
                 )}

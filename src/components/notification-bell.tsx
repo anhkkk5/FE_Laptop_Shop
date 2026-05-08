@@ -129,15 +129,18 @@ export default function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border hover:bg-muted"
+        className="relative flex flex-col items-center gap-0.5 text-emerald-950"
         aria-label="Thông báo"
       >
-        <Bell className="h-4 w-4" />
+        <Bell className="h-5 w-5" />
         {unread > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-white">
             {unread > 99 ? "99+" : unread}
           </span>
         )}
+        <span className="text-[10px] font-medium hidden sm:inline">
+          Thông báo
+        </span>
       </button>
 
       {open && (

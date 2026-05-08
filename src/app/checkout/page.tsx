@@ -205,7 +205,7 @@ export default function CheckoutPage() {
         )}
 
         {stockChanged && (
-          <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
+          <div className="rounded-md border border-lime-500/40 bg-lime-500/10 px-3 py-2 text-sm text-lime-700">
             Số lượng sản phẩm trong giỏ đã được làm mới theo tồn kho mới nhất.
             Bạn có thể quay lại giỏ hàng để điều chỉnh trước khi đặt đơn.
           </div>
@@ -323,7 +323,7 @@ export default function CheckoutPage() {
             </p>
           )}
           {isFreeShipping && (
-            <p className="text-sm text-purple-600 font-medium">
+            <p className="text-sm text-emerald-600 font-medium">
               Miễn phí vận chuyển
             </p>
           )}
@@ -362,7 +362,7 @@ export default function CheckoutPage() {
                       {s.name}
                     </p>
                     {s.isFreeShipping && (
-                      <span className="text-[10px] text-purple-600 font-medium">
+                      <span className="text-[10px] text-emerald-600 font-medium">
                         + Miễn phí vận chuyển
                       </span>
                     )}

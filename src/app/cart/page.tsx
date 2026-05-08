@@ -253,7 +253,7 @@ export default function CartPage() {
                   Mã đã lưu: {couponPreview.code}
                 </p>
                 {!hasValidPreview && (
-                  <p className="mt-1 text-amber-700">
+                  <p className="mt-1 text-lime-700">
                     Giỏ hàng đã thay đổi, cần áp lại mã ở bước thanh toán.
                   </p>
                 )}
