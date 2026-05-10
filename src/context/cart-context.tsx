@@ -16,7 +16,7 @@ interface CartContextType {
   cart: CartData;
   isLoading: boolean;
   refreshCart: () => Promise<void>;
-  addToCart: (productId: number, quantity?: number) => Promise<void>;
+  addToCart: (productId: number, quantity?: number, variantId?: number) => Promise<void>;
   updateCartItem: (itemId: number, quantity: number) => Promise<void>;
   removeCartItem: (itemId: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -55,8 +55,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     void refreshCart();
   }, [refreshCart]);
 
-  const addToCart = useCallback(async (productId: number, quantity: number = 1) => {
-    const data = await cartService.addItem(productId, quantity);
+  const addToCart = useCallback(async (productId: number, quantity: number = 1, variantId?: number) => {
+    const data = await cartService.addItem(productId, quantity, variantId);
     setCart(data);
   }, []);
 

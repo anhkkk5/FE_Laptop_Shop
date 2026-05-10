@@ -152,24 +152,15 @@ export default function CheckoutPage() {
         couponCode: couponPreview?.code,
       });
 
-      await paymentService.create(order.id, paymentMethod);
+      window.localStorage.removeItem(CHECKOUT_COUPON_PREVIEW_KEY);
 
       if (paymentMethod === "cod") {
-        window.localStorage.removeItem(CHECKOUT_COUPON_PREVIEW_KEY);
+        await paymentService.create(order.id, "cod");
         router.push(`/payment/success?orderId=${order.id}`);
-      } else if (paymentMethod === "vietqr") {
-        window.localStorage.removeItem(CHECKOUT_COUPON_PREVIEW_KEY);
-        router.push(`/payment/vietqr/${order.id}`);
-      } else if (paymentMethod === "momo") {
-        const momo = await paymentService.createMomo(order.id);
-        if (momo.payUrl) {
-          window.localStorage.removeItem(CHECKOUT_COUPON_PREVIEW_KEY);
-          window.location.href = momo.payUrl;
-        } else {
-          router.push(`/payment/failed?orderId=${order.id}`);
-        }
       } else {
-        router.push(`/orders/${order.id}`);
+        // SePay — tạo payment record, backend trả về QR data
+        await paymentService.create(order.id, "sepay");
+        router.push(`/payment/sepay/${order.id}`);
       }
     } catch (err) {
       const message =
@@ -256,40 +247,42 @@ export default function CheckoutPage() {
 
         <div className="space-y-2">
           <Label>Phương thức thanh toán</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => setPaymentMethod("cod")}
-              className={`rounded-md border px-3 py-2 text-sm text-left ${
-                paymentMethod === "cod"
-                  ? "border-primary bg-primary/10"
-                  : "border-border"
-              }`}
-            >
-              Thanh toán khi nhận hàng (COD)
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaymentMethod("vietqr")}
-              className={`rounded-md border px-3 py-2 text-sm text-left ${
-                paymentMethod === "vietqr"
-                  ? "border-primary bg-primary/10"
-                  : "border-border"
-              }`}
-            >
-              VietQR (giả lập)
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaymentMethod("momo")}
-              className={`rounded-md border px-3 py-2 text-sm text-left ${
-                paymentMethod === "momo"
-                  ? "border-primary bg-primary/10"
-                  : "border-border"
-              }`}
-            >
-              MoMo (giả lập)
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {(
+              [
+                {
+                  value: "cod" as PaymentMethod,
+                  label: "Thanh toán khi nhận hàng",
+                  sub: "Trả tiền mặt khi nhận hàng",
+                  emoji: "🚚",
+                },
+                {
+                  value: "sepay" as PaymentMethod,
+                  label: "Chuyển khoản ngân hàng",
+                  sub: "Quét QR — xác nhận tự động qua SePay",
+                  emoji: "🏦",
+                },
+              ] as const
+            ).map(({ value, label, sub, emoji }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setPaymentMethod(value)}
+                className={`rounded-lg border px-4 py-3 text-sm text-left transition-colors ${
+                  paymentMethod === value
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-muted-foreground/40"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{emoji}</span>
+                  <span className="font-medium">{label}</span>
+                </div>
+                <p className="mt-0.5 text-[11px] text-muted-foreground pl-7">
+                  {sub}
+                </p>
+              </button>
+            ))}
           </div>
         </div>
 

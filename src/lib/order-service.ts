@@ -56,7 +56,7 @@ interface ApiResponse<T> {
   data: T;
 }
 
-export type OrderPaymentMethod = "cod" | "vietqr" | "momo";
+export type OrderPaymentMethod = "cod" | "sepay";
 
 export interface CreateOrderPayload {
   customerName: string;

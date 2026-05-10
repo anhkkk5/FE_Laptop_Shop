@@ -4,7 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Package, Eye } from "lucide-react";
-import { productClientService, type Product } from "@/lib/product-service";
+import {
+  productClientService,
+  type Product,
+  type ProductVariant,
+} from "@/lib/product-service";
 import { orderService } from "@/lib/order-service";
 import { reviewService, type Review } from "@/lib/review-service";
 import { Badge } from "@/components/ui/badge";
@@ -91,6 +95,7 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [adding, setAdding] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -219,7 +224,23 @@ export default function ProductDetailPage() {
   }
 
   const currentImage = images[selectedImage]?.url;
-  const isOutOfStock = product.stockQuantity <= 0;
+  const activeVariants = product.variants?.filter((v) => v.isActive) ?? [];
+  const hasVariants = activeVariants.length > 0;
+
+  const displayPrice = selectedVariant
+    ? (selectedVariant.salePrice ?? selectedVariant.price ?? product.price)
+    : (product.salePrice ?? product.price);
+  const displayOriginalPrice = selectedVariant?.price ?? product.price;
+  const displaySalePrice = selectedVariant
+    ? (selectedVariant.salePrice ?? selectedVariant.price ?? null)
+    : product.salePrice;
+  const displayStock = selectedVariant
+    ? selectedVariant.stockQuantity
+    : product.stockQuantity;
+  const isOutOfStock = hasVariants
+    ? (selectedVariant ? selectedVariant.stockQuantity <= 0 : false)
+    : product.stockQuantity <= 0;
+  const mustSelectVariant = hasVariants && !selectedVariant;
 
   async function handleSubmitReview() {
     if (!product) return;
@@ -277,11 +298,16 @@ export default function ProductDetailPage() {
       return;
     }
 
+    if (mustSelectVariant) {
+      setActionMessage("Vui lòng chọn phiên bản sản phẩm trước.");
+      return;
+    }
+
     setAdding(true);
     setActionMessage(null);
 
     try {
-      await addToCart(product.id, 1);
+      await addToCart(product.id, 1, selectedVariant?.id);
       setActionMessage("Đã thêm sản phẩm vào giỏ hàng.");
     } catch (err) {
       setActionMessage(
@@ -371,41 +397,86 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-              {product.salePrice ? (
+              {displaySalePrice ? (
                 <div className="space-y-1">
                   <p className="text-3xl font-black text-destructive">
-                    {formatPrice(product.salePrice)}
+                    {formatPrice(displaySalePrice)}
                   </p>
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="text-muted-foreground line-through">
-                      {formatPrice(product.price)}
+                      {formatPrice(displayOriginalPrice)}
                     </span>
                     <Badge variant="destructive">
-                      -
-                      {Math.round(
-                        (1 - product.salePrice / product.price) * 100,
-                      )}
-                      %
+                      -{Math.round((1 - displaySalePrice / displayOriginalPrice) * 100)}%
                     </Badge>
                   </div>
                 </div>
               ) : (
                 <p className="text-3xl font-black">
-                  {formatPrice(product.price)}
+                  {formatPrice(displayPrice)}
                 </p>
               )}
             </div>
 
+            {/* Variant selector */}
+            {hasVariants && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">
+                  Phiên bản
+                  {!selectedVariant && (
+                    <span className="ml-1 text-xs font-normal text-muted-foreground">
+                      — chọn để tiếp tục
+                    </span>
+                  )}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {activeVariants.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedVariant(
+                          selectedVariant?.id === v.id ? null : v,
+                        )
+                      }
+                      disabled={v.stockQuantity <= 0}
+                      className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
+                        selectedVariant?.id === v.id
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : v.stockQuantity <= 0
+                            ? "border-border bg-muted/40 text-muted-foreground line-through cursor-not-allowed"
+                            : "border-border hover:border-primary/60 hover:bg-muted/30"
+                      }`}
+                    >
+                      {v.name}
+                    </button>
+                  ))}
+                </div>
+                {selectedVariant && (
+                  <p className="text-xs text-muted-foreground">
+                    Tồn kho phiên bản này:{" "}
+                    <span className={`font-medium ${selectedVariant.stockQuantity <= LOW_STOCK_THRESHOLD ? "text-amber-600" : "text-emerald-700"}`}>
+                      {selectedVariant.stockQuantity}
+                    </span>
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-lg border bg-muted/20 p-3">
                 <p className="text-muted-foreground">Tồn kho</p>
-                <p className="text-lg font-semibold">{product.stockQuantity}</p>
-                {isOutOfStock ? (
+                <p className="text-lg font-semibold">{hasVariants && !selectedVariant ? "—" : displayStock}</p>
+                {mustSelectVariant ? (
+                  <p className="mt-1 text-xs font-medium text-muted-foreground">
+                    Chọn phiên bản để xem
+                  </p>
+                ) : isOutOfStock ? (
                   <p className="mt-1 text-xs font-medium text-destructive">
                     Sản phẩm hiện đã hết hàng
                   </p>
-                ) : product.stockQuantity <= LOW_STOCK_THRESHOLD ? (
-                  <p className="mt-1 text-xs font-medium text-lime-700">
+                ) : displayStock <= LOW_STOCK_THRESHOLD ? (
+                  <p className="mt-1 text-xs font-medium text-amber-600">
                     Sắp hết hàng, hãy đặt sớm
                   </p>
                 ) : (
@@ -432,13 +503,15 @@ export default function ProductDetailPage() {
                 className="w-full"
                 size="lg"
                 onClick={handleAddToCart}
-                disabled={adding || isOutOfStock}
+                disabled={adding || isOutOfStock || mustSelectVariant}
               >
                 {isOutOfStock
                   ? "Tạm hết hàng"
-                  : adding
-                    ? "Đang thêm..."
-                    : "Thêm vào giỏ hàng"}
+                  : mustSelectVariant
+                    ? "Chọn phiên bản"
+                    : adding
+                      ? "Đang thêm..."
+                      : "Thêm vào giỏ hàng"}
               </Button>
               {actionMessage && (
                 <p className="text-xs text-muted-foreground">{actionMessage}</p>

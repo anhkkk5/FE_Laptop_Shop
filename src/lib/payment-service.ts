@@ -1,6 +1,6 @@
 import api from "./api";
 
-export type PaymentMethod = "cod" | "vietqr" | "momo";
+export type PaymentMethod = "cod" | "sepay";
 export type PaymentStatus = "pending" | "success" | "failed";
 
 export interface Payment {
@@ -16,6 +16,21 @@ export interface Payment {
   updatedAt: string;
 }
 
+export interface SepayQrData {
+  qrUrl: string;
+  accountNo: string;
+  bankCode: string;
+  accountName: string;
+  amount: number;
+  transferCode: string;
+  description: string;
+}
+
+export interface CreatePaymentResult {
+  payment: Payment;
+  sepayQr?: SepayQrData;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   statusCode: number;
@@ -23,30 +38,15 @@ interface ApiResponse<T> {
   data: T;
 }
 
-export interface VietQrResponse {
-  qrUrl: string;
-  bankId: string;
-  accountNo: string;
-  amount: number;
-  description: string;
-}
-
-export interface MomoResponse {
-  payUrl?: string;
-  qrCodeUrl?: string;
-  deeplink?: string;
-  orderId: string;
-  requestId: string;
-  resultCode: number;
-  message: string;
-}
-
 export const paymentService = {
-  async create(orderId: number, method: PaymentMethod): Promise<Payment> {
-    const res = await api.post<ApiResponse<Payment>>("/payments/create", {
-      orderId,
-      method,
-    });
+  async create(
+    orderId: number,
+    method: PaymentMethod,
+  ): Promise<CreatePaymentResult> {
+    const res = await api.post<ApiResponse<CreatePaymentResult>>(
+      "/payments/create",
+      { orderId, method },
+    );
     return res.data.data;
   },
 
@@ -57,16 +57,9 @@ export const paymentService = {
     return res.data.data;
   },
 
-  async getVietQr(orderId: number): Promise<VietQrResponse> {
-    const res = await api.get<ApiResponse<VietQrResponse>>(
-      `/payments/${orderId}/vietqr`,
-    );
-    return res.data.data;
-  },
-
-  async createMomo(orderId: number): Promise<MomoResponse> {
-    const res = await api.post<ApiResponse<MomoResponse>>(
-      `/payments/${orderId}/momo`,
+  async getSepayQr(orderId: number): Promise<SepayQrData> {
+    const res = await api.get<ApiResponse<SepayQrData>>(
+      `/payments/${orderId}/sepay-qr`,
     );
     return res.data.data;
   },

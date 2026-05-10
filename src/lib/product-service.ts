@@ -20,6 +20,19 @@ export interface Brand {
   slug: string;
 }
 
+export interface ProductVariant {
+  id: number;
+  productId: number;
+  name: string;
+  sku: string | null;
+  price: number | null;
+  salePrice: number | null;
+  stockQuantity: number;
+  attributes: Record<string, string>;
+  isActive: boolean;
+  sortOrder: number;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -37,6 +50,7 @@ export interface Product {
   category: Category | null;
   brand: Brand | null;
   images: ProductImage[];
+  variants: ProductVariant[];
   createdAt: string;
 }
 

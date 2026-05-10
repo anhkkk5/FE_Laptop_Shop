@@ -8,6 +8,8 @@ export interface CartItem {
   unitPrice: number;
   productName: string;
   productImage: string | null;
+  variantId: number | null;
+  variantLabel: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,10 +39,15 @@ export const cartService = {
     return res.data.data;
   },
 
-  async addItem(productId: number, quantity: number): Promise<CartData> {
+  async addItem(
+    productId: number,
+    quantity: number,
+    variantId?: number,
+  ): Promise<CartData> {
     const res = await api.post<ApiResponse<CartData>>("/cart/items", {
       productId,
       quantity,
+      ...(variantId !== undefined ? { variantId } : {}),
     });
     return res.data.data;
   },
